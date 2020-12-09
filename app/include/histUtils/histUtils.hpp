@@ -28,10 +28,9 @@ class Hist {
     void loadSrc(const cv::Mat& src_, std::vector<int> &n_bins_,
         std::vector<HistRange> &ranges_, const cv::Mat& mask_ = cv::Mat());
 
-    cv::Mat getHistogram();
-
+    cv::Mat getHist();
+    cv::Mat getNormalizedHist();
     std::vector<double> getMean();
-
     std::vector<double> getStdDev();
 
     private:
@@ -39,7 +38,7 @@ class Hist {
     cv::Mat mask;
     cv::Mat hist;
     cv::Mat norm_hist;
-    std::vector<cv::Mat> normChannelsHist;
+    std::vector<cv::Mat> channelsHist;
 
     std::vector<int> bins;
     std::vector<HistRange> ranges;
@@ -47,7 +46,7 @@ class Hist {
     std::vector<double> stdDev;
 
     int dims;
-    char flags;
+    unsigned char flags;
 
     void calcHistogram();
     void calcChannelsHist();
