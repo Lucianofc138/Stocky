@@ -10,5 +10,6 @@ option(BUILD_PLAYGROUND "Build playground module" OFF)
 add_subdirectory( app )
 
 if(BUILD_PLAYGROUND)
-    add_subdirectory( playground )
+    add_subdirectory( playground/tomas )
+    add_subdirectory( playground/luciano )
 endif()
