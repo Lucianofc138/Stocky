@@ -114,7 +114,7 @@ void Hist::normalizeHist()
     flags |= HIST_NORMALIZED;
 }
 
-void Hist::calculateMeanStdDev()
+void Hist::calcMeanStdDev()
 {
     if (src.empty() || dims == 0)
         return;
@@ -147,16 +147,21 @@ cv::Mat Hist::getNormalizedHist()
     return norm_hist.clone();
 }
 
+double Hist::calcDistance(const Hist& other)
+{
+    return cv::compareHist(norm_hist, other.norm_hist, cv::HISTCMP_BHATTACHARYYA);
+}
+
 std::vector<double> Hist::getMean()
 {
     if ((flags & HIST_MEAN) == 0)
-        calculateMeanStdDev();
+        calcMeanStdDev();
     return mean;
 }
 
 std::vector<double> Hist::getStdDev()
 {
     if ((flags & HIST_STD_DEV) == 0)
-        calculateMeanStdDev();
+        calcMeanStdDev();
     return stdDev;
 }

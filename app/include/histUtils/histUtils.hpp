@@ -30,6 +30,7 @@ class Hist {
 
     cv::Mat getHist();
     cv::Mat getNormalizedHist();
+    double calcDistance(const Hist& other);
     std::vector<double> getMean();
     std::vector<double> getStdDev();
 
@@ -51,7 +52,7 @@ class Hist {
     void calcHistogram();
     void calcChannelsHist();
     void normalizeHist();
-    void calculateMeanStdDev();
+    void calcMeanStdDev();
 
     // disable =operator & copy constructor
     Hist(const Hist& other);

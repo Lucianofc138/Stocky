@@ -5,7 +5,7 @@
 #include <iterator>
 
 int main() {
-    cv::Mat src = cv::imread("samples/cereales/chocapic/chocapic1.png", cv::IMREAD_COLOR);
+    cv::Mat src = cv::imread("samples/cereales/trix/trix1.png", cv::IMREAD_COLOR);
 
     cv::Mat yCrCbSrc, crCbSrc;
     cv::cvtColor(src, yCrCbSrc, cv::COLOR_BGR2YCrCb);
