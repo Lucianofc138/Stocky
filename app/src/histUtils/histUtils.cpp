@@ -7,10 +7,10 @@ Hist::Hist()
 
 Hist::Hist(const cv::Mat &src_, int n_bins_,
            const cv::Mat &mask_, HistRange range_)
-    : dims(src.channels()), flags(0), src(src_),
-        mask(mask_), channelsHist(src.channels()),
-        bins(src.channels()), ranges(src.channels()),
-        mean(src.channels()), stdDev(src.channels())
+    : dims(src_.channels()), flags(0), src(src_),
+        mask(mask_), channelsHist(src_.channels()),
+        bins(src_.channels()), ranges(src_.channels()),
+        mean(src_.channels()), stdDev(src_.channels())
 {
     for (int i = 0; i < dims; ++i)
     {
@@ -21,9 +21,9 @@ Hist::Hist(const cv::Mat &src_, int n_bins_,
 
 Hist::Hist(const cv::Mat &src_, std::vector<int> &n_bins_,
            std::vector<HistRange> &ranges_, const cv::Mat &mask_)
-    : dims(src.channels()), flags(0), src(src_),
-      mask(mask_), bins(n_bins_), ranges(ranges_), channelsHist(src.channels()),
-      mean(src.channels()), stdDev(src.channels())
+    : dims(src_.channels()), flags(0), src(src_),
+      mask(mask_), bins(n_bins_), ranges(ranges_), channelsHist(src_.channels()),
+      mean(src_.channels()), stdDev(src_.channels())
 {
 }
 
@@ -51,9 +51,7 @@ void Hist::loadSrc(const cv::Mat& src_, std::vector<int> &n_bins_,
 void Hist::calcHistogram()
 {
     if (src.empty() || dims == 0)
-    {
         return;
-    }
 
     flags &= ~(HIST_MEAN + HIST_STD_DEV + HIST_NORMALIZED + HIST_CHANNELS);
 
@@ -84,9 +82,7 @@ void Hist::calcHistogram()
 void Hist::calcChannelsHist()
 {
     if (src.empty() || dims == 0)
-    {
         return;
-    }
 
     std::vector<cv::Mat> channels;
     cv::split(src, channels);
@@ -121,9 +117,7 @@ void Hist::normalizeHist()
 void Hist::calculateMeanStdDev()
 {
     if (src.empty() || dims == 0)
-    {
         return;
-    }
 
     std::vector<cv::Mat> channels;
     cv::split(src, channels);
