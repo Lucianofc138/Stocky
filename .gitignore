@@ -3,3 +3,6 @@
 build
 bin
 
+stocky.code-workspace
+
+.ipynb_checkpoints
