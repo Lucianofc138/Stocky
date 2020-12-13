@@ -1,7 +1,88 @@
 #include <shelfUtils/shelfUtils.hpp>
 
+// ----------------------------------------------------------------------------
+// -- CRATE MODEL CLASS METHODS DEFINITION ------------------------------------
+// ----------------------------------------------------------------------------
+CrateModel::CrateModel(cv::Mat srcImg_, cv::Rect reg_, cv::Mat templateImg_)
+{
+    this->templateImage = templateImg_;
+    this->crateImage = srcImg_(reg_);
+    this->init_time = std::time(nullptr);
+    this->finish_time = -1;
+    
+}
+
+void CrateModel::calcHist()
+{
+    
+    
+}
+
+
+// ----------------------------------------------------------------------------
+// -- CRATE CLASS METHODS DEFINITION ------------------------------------------
+// ----------------------------------------------------------------------------
+
+Crate::Crate(cv::Mat srcImg_, cv::Rect reg_)
+{
+    //Pasarle imagen a Right Model
+}
+
+// ----------------------------------------------------------------------------
+// -- FLOOR CLASS METHODS DEFINITION ------------------------------------------
+// ----------------------------------------------------------------------------
+
+Floor::Floor(cv::Mat shelfImage, cv::Rect rect)
+{
+    this->floorRect = rect;
+    this->floorImage = shelfImage(rect);
+}
+
+cv::Rect Floor::getFloorRect()
+{
+    return this->floorRect;
+}
+
+cv::Mat Floor::getEmptyMask()
+{
+    return this->emptyMask;
+}
+
+void Floor::calcEmptyMask(cv::Mat src_img)
+{
+    // cv::Size floorSize = this->floorRect.size();
+    // cv::Mat src(floorSize, CV_8UC4);
+    cv::Mat src_rect = src_img(this->floorRect);
+    cv::Mat gray, thresh, mask;
+    cv::cvtColor(src_rect, gray, cv::COLOR_BGR2GRAY);
+    cv::equalizeHist(gray, gray);
+    cv::threshold(gray, thresh, 150, 255, 0);
+
+    cv::imshow("FloorThresh", thresh);
+
+    cv::Size dilate_size(thresh.cols / 50, thresh.rows * 2);
+    cv::Mat dilate_struct = getStructuringElement(cv::MORPH_RECT, dilate_size);
+    cv::dilate(thresh, mask, dilate_struct, cv::Point(-1, -1));
+
+    cv::Size size2(thresh.cols / 50, thresh.cols / 50);
+    cv::Mat struct2 = getStructuringElement(cv::MORPH_RECT, size2);
+    cv::erode(mask, mask, struct2, cv::Point(-1, -1), 1, cv::BORDER_ISOLATED);
+
+    cv::bitwise_not(mask, mask);
+
+    cv::imshow("FloorMask", mask);
+
+    this->emptyMask = mask;
+}
+
+// ----------------------------------------------------------------------------
+// -- SHELF CLASS METHODS DEFINITION ------------------------------------------
+// ----------------------------------------------------------------------------
+
+
 Shelf::Shelf(cv::Mat shelfImage)
 {
+    this->shelfImage = shelfImage.clone();
     this->calcShelfInfo(shelfImage);
     this->getShelfMask(shelfImage.rows, shelfImage.cols);
     this->fillFloorsVect(shelfImage.rows, shelfImage.cols);
@@ -235,44 +316,4 @@ int Shelf::get_lines_thickness(cv::Mat img)
     return thickness;
 }
 
-Floor::Floor(cv::Rect rect)
-{
-    this->floorRect = rect;
-}
 
-cv::Rect Floor::getFloorRect()
-{
-    return this->floorRect;
-}
-
-cv::Mat Floor::getEmptyMask()
-{
-    return this->emptyMask;
-}
-
-void Floor::calcEmptyMask(cv::Mat src_img)
-{
-    // cv::Size floorSize = this->floorRect.size();
-    // cv::Mat src(floorSize, CV_8UC4);
-    cv::Mat src_rect = src_img(this->floorRect);
-    cv::Mat gray, thresh, mask;
-    cv::cvtColor(src_rect, gray, cv::COLOR_BGR2GRAY);
-    cv::equalizeHist(gray, gray);
-    cv::threshold(gray, thresh, 150, 255, 0);
-
-    cv::imshow("FloorThresh", thresh);
-
-    cv::Size dilate_size(thresh.cols / 50, thresh.rows * 2);
-    cv::Mat dilate_struct = getStructuringElement(cv::MORPH_RECT, dilate_size);
-    cv::dilate(thresh, mask, dilate_struct, cv::Point(-1, -1));
-
-    cv::Size size2(thresh.cols / 50, thresh.cols / 50);
-    cv::Mat struct2 = getStructuringElement(cv::MORPH_RECT, size2);
-    cv::erode(mask, mask, struct2, cv::Point(-1, -1), 1, cv::BORDER_ISOLATED);
-
-    cv::bitwise_not(mask, mask);
-
-    cv::imshow("FloorMask", mask);
-
-    this->emptyMask = mask;
-}
