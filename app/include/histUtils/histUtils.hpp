@@ -30,7 +30,7 @@ class Hist {
 
     cv::Mat getHist();
     cv::Mat getNormalizedHist();
-    double calcDistance(const Hist& other);
+    double calcDistance(Hist& other);
     std::vector<double> getMean();
     std::vector<double> getStdDev();
 

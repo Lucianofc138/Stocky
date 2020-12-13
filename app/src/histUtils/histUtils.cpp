@@ -147,9 +147,11 @@ cv::Mat Hist::getNormalizedHist()
     return norm_hist.clone();
 }
 
-double Hist::calcDistance(const Hist& other)
+double Hist::calcDistance(Hist& other)
 {
-    return cv::compareHist(norm_hist, other.norm_hist, cv::HISTCMP_BHATTACHARYYA);
+    if ((flags & HIST_NORMALIZED) == 0)
+        normalizeHist();
+    return cv::compareHist(norm_hist, other.getNormalizedHist(), cv::HISTCMP_BHATTACHARYYA);
 }
 
 std::vector<double> Hist::getMean()
