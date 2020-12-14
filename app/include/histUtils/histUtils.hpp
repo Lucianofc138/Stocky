@@ -19,6 +19,10 @@ class Hist {
     public:
     Hist();
 
+    Hist(const Hist& other);
+
+    Hist& operator=(const Hist& other);
+
     Hist(const cv::Mat& src_, int n_bins_ = 16, 
         const cv::Mat& mask_ = cv::Mat(), HistRange range_ = {0, 255});
 
@@ -30,7 +34,7 @@ class Hist {
 
     cv::Mat getHist();
     cv::Mat getNormalizedHist();
-    double calcDistance(Hist& other);
+    double calcDistance(Hist& other, int method);
     std::vector<double> getMean();
     std::vector<double> getStdDev();
 
@@ -53,11 +57,8 @@ class Hist {
     void calcChannelsHist();
     void normalizeHist();
     void calcMeanStdDev();
-
-    // disable =operator & copy constructor
-    Hist(const Hist& other);
-    Hist& operator=(const Hist& other);
-
+    void setMembers(const Hist& other);
+    void resizeHist();
 };
 
 #endif
