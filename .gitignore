@@ -6,3 +6,5 @@ bin
 stocky.code-workspace
 
 .ipynb_checkpoints
+
+__pycache__
