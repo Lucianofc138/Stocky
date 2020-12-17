@@ -36,10 +36,8 @@ Floor::Floor(cv::Mat shelfImage, cv::Rect rect)
 {
     this->floorRect = rect;
     this->floorImage = shelfImage(rect);
-}
 
-void Floor::updateImage(cv::Mat shelfImage){
-    this->floorImage = shelfImage(this->floorRect);
+    
 }
 
 cv::Rect Floor::getFloorRect()
@@ -108,9 +106,7 @@ void Shelf::updateImage(cv::Mat frame)
 {
     this->shelfImage = frame.clone();
     cv::imshow("video", this->shelfImage);
-    for (int i = 0; i<this->floors.size(); i++){
-        floors.at(i).updateImage(frame);
-    }
+
 }
 
 

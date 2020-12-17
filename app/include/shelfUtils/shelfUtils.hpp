@@ -59,8 +59,6 @@ class Floor
 { 
     public:
         Floor(cv::Mat shelfImage, cv::Rect rect);
-
-        void updateImage(cv::Mat shelfImage);
         
         cv::Rect getFloorRect();
 
