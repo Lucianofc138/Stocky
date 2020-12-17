@@ -13,66 +13,68 @@
 
 #include "histUtils/histUtils.hpp"
 
-class CrateModel
-{
-    public:
-        CrateModel(cv::Mat srcImg_, cv::Rect reg_, cv::Mat templateImg_);
+// class CrateModel
+// {
+//     public:
+//         CrateModel(cv::Mat srcImg_, cv::Rect reg_, cv::Mat templateImg_);
 
         
 
 
 
-    private:
-        void calcHist();
-        cv::Mat templateImage;
-        cv::Mat crateImage;
-        Hist histogram;
-        std::time_t init_time;
-        std::time_t finish_time;
-};
+//     private:
+//         void calcHist();
+//         cv::Mat templateImage;
+//         cv::Mat crateImage;
+//         Hist histogram;
+//         std::time_t init_time;
+//         std::time_t finish_time;
+// };
 
-class Crate
-{
-    public:
-        Crate(cv::Mat srcImg_, cv::Rect reg_);
-
-
+// class Crate
+// {
+//     public:
+//         Crate(cv::Mat srcImg_, cv::Rect reg_);
 
 
-    private:
-        cv::Rect regionInFloor;
-        CrateModel currentModel;
-        CrateModel rightModel;
-        bool productIsRight;
-        bool isEmpty;
+
+
+//     private:
+//         cv::Rect regionInFloor;
+//         CrateModel currentModel;
+//         CrateModel rightModel;
+//         bool productIsRight;
+//         bool isEmpty;
         
-        void updateStatus(); // compara producto actual con correcto y actualiza
+//         void updateStatus(); // compara producto actual con correcto y actualiza
 
-        void checkCurrentModelTime();
+//         void checkCurrentModelTime();
 
-        void updateRightModel();
+//         void updateRightModel();
         
 
-};
+// };
 
 class Floor
 { 
     public:
         Floor(cv::Mat shelfImage, cv::Rect rect);
+
+        void updateImage(cv::Mat shelfImage);
         
         cv::Rect getFloorRect();
 
         cv::Mat getEmptyMask();
 
-        void calcEmptyMask(cv::Mat src_img);
+        void calcEmptyMask(cv::Mat src_img, int emptyThreshold);
 
-        //Necesita metodo que llame al update de cada crate cunado la mascara de 
+        //Necesita metodo que llame al update de cada crate cuando la mascara de 
         // foreground esté cerca
 
     private:
         cv::Rect floorRect;
         cv::Mat floorImage;
-        std::vector< Crate > products;
+        // std::vector< Crate > products;
         cv::Mat emptyMask;
         cv::Mat foregroundMask;
 
@@ -83,7 +85,11 @@ class Shelf
     public:
         Shelf(cv::Mat shelfImage);
 
-        void updateImage(cv::Mat frame);
+        Shelf(cv::Mat shelfImage, int emptyThreshold);
+
+        // Shelf(JSON); PARA CARGAR CONFIGURACIÓN PRE HECHA
+
+        void updateImage(cv::Mat frame); // TO DO
 
         void calcShelfInfo(cv::Mat image);
 
@@ -91,15 +97,18 @@ class Shelf
 
         void fillFloorsVect(int height, int width);
 
-        void paintFloorRects(cv::Mat image);
+        void calcEmptyMask();
 
-        void calcEmptyMask(cv::Mat image);
+        void paintFloorRects(cv::Mat image);
 
         Floor getFloor(int floor);
 
     private:
-        std::vector<int> centers;
+        int emptyThreshold;
+
         int thickness;
+        std::vector<int> centers;
+
         std::vector<Floor> floors;
         cv::Mat shelfMask;
         cv::Mat emptyMask;
