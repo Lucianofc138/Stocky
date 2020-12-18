@@ -12,82 +12,17 @@ using namespace cv::xfeatures2d;
 using std::cout;
 using std::endl;
 
-void sortKeypoints(std::vector<KeyPoint> &k_query,
-                   std::vector<KeyPoint> &k_train, 
-                   std::vector<DMatch> &good_matches,
-                   std::vector<KeyPoint> &k_query2,
-                   std::vector<KeyPoint> &k_train2 ){
 
-    for(int i=0; i<good_matches.size(); i++){
-        int min_x = k_train.at( good_matches.at(i).trainIdx ).pt.x;
-        int min_pos = i;
-        for(int j=i+1; j<good_matches.size(); j++){
-            int current_x = k_train.at( good_matches.at(j).trainIdx ).pt.x;
-            if( current_x < min_x ){
-                min_pos = j;
-                min_x = current_x;
-            }
-        }
-        k_query2.push_back(k_query.at(good_matches[min_pos].queryIdx));
-        k_train2.push_back(k_train.at(good_matches[min_pos].trainIdx));
-        std::swap(good_matches[i], good_matches[min_pos]);
-        good_matches[i].queryIdx = i;
-        good_matches[i].trainIdx = i;
-        
+struct MatchInfo {
+    std::vector<KeyPoint> keypts_temp;
+    std::vector<KeyPoint> keypts_roi;
+    std::vector<DMatch> good_matches;
+};
 
-    }
-
-}
-
-void filterKeypoints(std::vector<KeyPoint> &k_query,
-                          std::vector<KeyPoint> &k_train, 
-                          std::vector<DMatch> &good_matches,
-                          int max_dist, int min_dist){
-
-    std::vector<int> pos_to_keep;
-
-    for(int i = 1; i<k_train.size()-1; i++){
-        int prev_x = k_train.at(i-1).pt.x;
-        int current_x = k_train.at(i).pt.x;
-        int next_x = k_train.at(i+1).pt.x;
-
-        bool far_from_next = next_x - current_x > max_dist;
-        bool far_from_prev = current_x - prev_x > max_dist;
-        bool close_to_next = next_x - current_x < min_dist;
-        bool close_to_prev = current_x - prev_x < min_dist;
-
-        if(i==1 && not(far_from_prev || close_to_prev)){
-            pos_to_keep.push_back(i-1);
-        }
-        if(not(far_from_next || far_from_prev || close_to_next || close_to_prev)){
-            pos_to_keep.push_back(i);
-        }
-
-        if(i==k_train.size()-2 && not(far_from_next || close_to_next)){
-            pos_to_keep.push_back(i+1);
-        }
-    }
-
-    std::vector<KeyPoint> new_k_query, new_k_train;
-    std::vector<DMatch> new_good_matches;
-
-    for(int i=0; i<pos_to_keep.size(); i++){
-        int pos = pos_to_keep.at(i);
-        new_k_query.push_back(k_query.at(pos));
-        new_k_train.push_back(k_train.at(pos));
-        new_good_matches.push_back(good_matches.at(pos));
-    }
-    k_query = new_k_query;
-    k_train = new_k_train;
-    good_matches = new_good_matches;
-    
-    for(int i=0; i<good_matches.size(); i++){
-        good_matches.at(i).queryIdx = i;
-        good_matches.at(i).trainIdx = i;
-    }
-
-                 
-}
+struct RelevantPoints {
+    std::vector<cv::Point2f> src_pts;
+    std::vector<cv::Point2f> dst_pts;
+};
 
 bool checkCorners(std::vector<cv::Point2f> src_corners,
                   std::vector<cv::Point2f> dst_corners){
@@ -126,6 +61,211 @@ cv::Rect getRectFromCorners(std::vector<cv::Point2f> dst_corners, Size img_size)
     return rect;
 }
 
+void filterGoodMatches(std::vector< std::vector<DMatch> >& knn_matches,
+                   std::vector<DMatch>& dst_, double threshold = 0.7)
+{
+    for (size_t i = 0; i < knn_matches.size(); i++)
+    {
+        if (knn_matches[i][0].distance < threshold * knn_matches[i][1].distance)
+        {
+            dst_.push_back(knn_matches[i][0]);
+        }
+    }
+}
+
+
+
+void featureMatching(cv::Mat templateImg, cv::Mat srcImg, MatchInfo& match){
+    int minHessian = 400;
+    Ptr<SURF> detector = SURF::create( minHessian );
+
+    Mat descriptors1, descriptors2;
+
+    detector->detectAndCompute( templateImg, noArray(), match.keypts_temp, descriptors1 );
+    detector->detectAndCompute( srcImg, noArray(), match.keypts_roi, descriptors2 );
+
+    Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create(DescriptorMatcher::FLANNBASED);
+    std::vector< std::vector<DMatch> > knn_matches;
+    matcher->knnMatch( descriptors1, descriptors2, knn_matches, 2 );
+
+    const float ratio_thresh = 0.7f;
+
+    filterGoodMatches(knn_matches, match.good_matches, ratio_thresh);
+}
+
+void removeMatch(MatchInfo& match, Point2d point, int ksize){
+    std::vector<int> indexToDelete; 
+    for(int i=0; i< match.good_matches.size(); i++){
+        int matchId = match.good_matches.at(i).trainIdx;
+        Point2d it_pt = match.keypts_roi.at(matchId).pt;
+        if(cv::norm(point-it_pt) < 1 )
+            indexToDelete.push_back(i);
+    }
+    while( indexToDelete.size() > 0 ){
+        int index = indexToDelete.back();
+        match.good_matches.erase( match.good_matches.begin() + index );
+        indexToDelete.pop_back();
+    }
+}
+
+void filterMatchesByDistance(MatchInfo& match, Size roiSize, int kernel_size){
+    cv::Mat roiKeyPts(roiSize, CV_8UC1, Scalar(0,0,0));
+    for(int i=0; i<match.good_matches.size(); ++i)
+    {
+        int keypt_id = match.good_matches.at(i).trainIdx;
+        cv::Point2d roi_keypt = match.keypts_roi.at(keypt_id).pt;
+        roiKeyPts.at<uchar>(roi_keypt) += 1;
+    }
+    // imshow("KEY POINTS", roiKeyPts);
+    for(int j=0; j < roiKeyPts.rows-kernel_size; j++) {
+        for(int i=0; i < roiKeyPts.cols-kernel_size; i++) {
+            uchar cumsum = 0;
+
+
+            for (int k = 0; k < kernel_size; ++k)
+            {
+                for (int h = 0; h < kernel_size; ++h)
+                    cumsum += roiKeyPts.at<uchar>(i + k, j + h);
+            }
+
+            if (cumsum > 1) {
+                for (int k = 0; k < kernel_size; ++k)
+                {
+                    for (int h = 0; h < kernel_size; ++h)
+                        removeMatch(match, Point2d(i+k, j+h), kernel_size);
+                } 
+            }
+        }
+    }
+}
+
+void getRelevantPoints(MatchInfo& match, RelevantPoints& pts, int x_offset)
+{
+    std::vector <int> indexToDelete;
+    for(int i=0; i<match.good_matches.size(); i++){
+        if(match.good_matches.at(i).distance < 0.15){
+            int src_id = match.good_matches.at(i).queryIdx;
+            int dst_id = match.good_matches.at(i).trainIdx;
+            pts.src_pts.push_back(match.keypts_temp.at(src_id).pt);
+            Point2f dst_pt = match.keypts_roi.at(dst_id).pt;
+            dst_pt.x += x_offset;
+            pts.dst_pts.push_back(dst_pt);
+        }else{
+            indexToDelete.push_back(i);
+        }
+    }
+    while( indexToDelete.size() > 0 ){
+        int index = indexToDelete.back();
+        match.good_matches.erase( match.good_matches.begin() + index );
+        indexToDelete.pop_back();
+    }
+
+}
+
+void filterBestPoints(MatchInfo& match, int pointsAmount=6)
+{
+    std::vector <int> indexToKeep;
+    std::vector <int> indexToDelete;
+    for(int j=0; j<pointsAmount; j++){
+        float minDist = 1;
+        int minDistIndex;
+        for(int i=0; i<match.good_matches.size(); i++){
+            bool skip = false;
+            for(int k=0; k<indexToKeep.size(); k++){
+                if(i==indexToKeep.at(k))
+                    skip = true;
+            }
+            if (skip)
+                continue;
+            float dist = match.good_matches.at(i).distance;
+            if (dist < minDist){
+                minDist = dist;
+                minDistIndex = i;
+            }
+        }
+        indexToKeep.push_back(minDistIndex);       
+    }
+    for(int i=0; i<match.good_matches.size(); i++){
+        bool skip = false;
+        for(int k=0; k<indexToKeep.size(); k++){
+            if(i==indexToKeep.at(k))
+                skip = true;
+        }
+        if (skip)
+            continue;
+        indexToDelete.push_back(i);
+    }
+    while( indexToDelete.size() > 0 ){
+        int index = indexToDelete.back();
+        match.good_matches.erase( match.good_matches.begin() + index );
+        indexToDelete.pop_back();
+    }
+}
+
+void getCornerPointsCW(cv::Mat img, std::vector<cv::Point2f>& corners)
+{
+    corners.push_back(Point2f(0, 0));
+    corners.push_back(Point2f(img.cols, 0));
+    corners.push_back(Point2f(img.cols, img.rows));
+    corners.push_back(Point2f(0, img.rows));
+}
+void scanFeaturesSlidingWindow(cv::Mat templateImg, cv::Mat floorImg, std::vector<cv::Rect> boxes)
+{
+    int window_width = floorImg.rows*templateImg.cols/templateImg.rows;
+    int x_step= 0.25*window_width;
+
+    cv::Rect roi;
+    cv::Mat roi_img;
+    int width;
+    bool cornersChecked = false;
+    for(int x_offset=0;  x_offset<floorImg.cols-0.5*x_step;  x_offset+=x_step){
+        if( (floorImg.cols-x_offset) > window_width ){
+            width = window_width;
+        } else {
+            width = floorImg.cols-x_offset;
+        }
+
+        roi = Rect(x_offset, 0, width, floorImg.rows);
+        if((roi.width + window_width/25 < window_width) && not(cornersChecked)){
+            break;
+        }
+        roi_img = floorImg(roi);
+        // imshow("Current Rect", roi_img);
+        // cv::waitKey(0);
+
+        MatchInfo match;
+        RelevantPoints relevantPts;
+        featureMatching(templateImg, roi_img, match);
+        filterMatchesByDistance(match, roi_img.size(), 9);
+        filterBestPoints(match,  6);
+        getRelevantPoints(match, relevantPts, x_offset);
+        int minKeypointsAmount = 6;
+        if(relevantPts.src_pts.size() < minKeypointsAmount)
+            continue;
+        Mat perspectiveMat_= findHomography(relevantPts.src_pts, relevantPts.dst_pts);
+        std::vector<cv::Point2f> templateCorners, dstCorners;
+        getCornerPointsCW(templateImg, templateCorners);
+        perspectiveTransform(templateCorners, dstCorners, perspectiveMat_);
+        cornersChecked = checkCorners(templateCorners, dstCorners);
+        
+        if(not(cornersChecked))
+            continue;
+        cv::Rect box = getRectFromCorners(dstCorners, floorImg.size());
+        imshow("box", floorImg(box));
+        boxes.push_back(box);
+        Mat img_matches;
+        drawMatches( templateImg, match.keypts_temp, roi_img, match.keypts_roi, match.good_matches,
+                     img_matches, Scalar::all(-1), Scalar::all(-1), std::vector<char>(),
+                     DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
+        imshow("Good Matches", img_matches );
+        cv::waitKey(0);
+
+        if(cornersChecked){
+            x_offset = box.x+box.width-x_step;
+        }
+    }
+}
+
 int main( int argc, char* argv[] )
 {
 
@@ -138,93 +278,10 @@ int main( int argc, char* argv[] )
     }
     imshow("1", img1 );
     imshow("2", img2 );
-    //-- Step 1: Detect the keypoints using SURF Detector, compute the descriptors
-    int minHessian = 400;
-    Ptr<SURF> detector = SURF::create( minHessian );
-    std::vector<KeyPoint> keypoints1, keypoints2;
-    Mat descriptors1, descriptors2;
-    int window_width = img2.rows*img1.cols/img1.rows;
-    int x_step= 0.25*window_width;
 
-    Rect roi;
-    Mat roi_img;
     std::vector<cv::Rect> boxes;
-    int width;
-    bool cornersChecked = false;
-    for(int x_offset=0;  x_offset<img2.cols-0.5*x_step;  x_offset+=x_step){
-        if( (img2.cols-x_offset) > window_width ){
-            width = window_width;
-        } else{
-            width = img2.cols-x_offset;
-        }
+    scanFeaturesSlidingWindow(img1, img2, boxes);
 
-        roi = Rect(x_offset, 0, width, img2.rows);
-        if((roi.width + window_width/25 < window_width) && not(cornersChecked)){
-            break;
-        }
-        roi_img = img2(roi);
-        imshow("Current Rect", roi_img);
-        waitKey();
-
-        detector->detectAndCompute( img1, noArray(), keypoints1, descriptors1 );
-        detector->detectAndCompute( roi_img, noArray(), keypoints2, descriptors2 );
-
-        //-- Step 2: Matching descriptor vectors with a FLANN based matcher
-        // Since SURF is a floating-point descriptor NORM_L2 is used
-        Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create(DescriptorMatcher::FLANNBASED);
-        std::vector< std::vector<DMatch> > knn_matches;
-        matcher->knnMatch( descriptors1, descriptors2, knn_matches, 2 );
-        //-- Filter matches using the Lowe's ratio test
-        const float ratio_thresh = 0.7f;
-        std::vector<DMatch> good_matches;
-        for (size_t i = 0; i < knn_matches.size(); i++)
-        {
-            if (knn_matches[i][0].distance < ratio_thresh * knn_matches[i][1].distance)
-            {
-                good_matches.push_back(knn_matches[i][0]);
-            }
-        }
-
-        std::vector<cv::Point2f> src_pts;
-        std::vector<cv::Point2f> dst_pts;
-        for(int i=0; i<good_matches.size(); i++){
-            if(good_matches.at(i).distance < 0.2){
-                int src_id = good_matches.at(i).queryIdx;
-                int dst_id = good_matches.at(i).trainIdx;
-                src_pts.push_back(keypoints1.at(src_id).pt);
-                Point2f dst_pt = keypoints2.at(dst_id).pt;
-                dst_pt.x += x_offset;
-                dst_pts.push_back(dst_pt);
-            }
-        }
-        if(src_pts.size()<6) continue;
-        Mat perspectiveMat_= findHomography(src_pts, dst_pts);
-
-        std::vector<cv::Point2f> src_corners;
-        src_corners.push_back(Point2f(0, 0));
-        src_corners.push_back(Point2f(img1.cols, 0));
-        src_corners.push_back(Point2f(img1.cols, img1.rows));
-        src_corners.push_back(Point2f(0, img1.rows));
-        std::vector<cv::Point2f> dst_corners;
-        perspectiveTransform(src_corners, dst_corners, perspectiveMat_);
-        cornersChecked = checkCorners(src_corners, dst_corners);
-        if(not(cornersChecked))
-            continue;
-        cv::Rect box = getRectFromCorners(dst_corners, img2.size());
-        imshow("box", img2(box));
-        boxes.push_back(box);
-        //-- Draw matches
-        Mat img_matches;
-        drawMatches( img1, keypoints1, roi_img, keypoints2, good_matches, img_matches, Scalar::all(-1),
-                 Scalar::all(-1), std::vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
-        //-- Show detected matches
-        imshow("Good Matches", img_matches );
-        
-        waitKey();
-        if(cornersChecked){
-            x_offset = box.x+box.width-x_step;
-        }
-    }
     return 0;
 }
 

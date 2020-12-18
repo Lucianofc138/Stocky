@@ -59,8 +59,12 @@ class Floor
 { 
     public:
         Floor(cv::Mat shelfImage, cv::Rect rect);
+
+        void updateImage(cv::Mat shelfImage);
         
         cv::Rect getFloorRect();
+
+        cv::Mat getFloorImage();
 
         cv::Mat getEmptyMask();
 
@@ -81,9 +85,8 @@ class Floor
 class Shelf
 { 
     public:
-        Shelf(cv::Mat shelfImage);
 
-        Shelf(cv::Mat shelfImage, int emptyThreshold);
+        Shelf(cv::Mat shelfImage, int emptyThreshold=160);
 
         // Shelf(JSON); PARA CARGAR CONFIGURACIÓN PRE HECHA
 
