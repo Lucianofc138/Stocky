@@ -5,10 +5,10 @@ target_link_libraries(HISTO_ANALYSIS PRIVATE
     HISTUTILS
     ${OPENCV})
 
-add_executable(PRODUCT product.cpp)
+add_executable(COMPARE compareHists.cpp)
 
-target_include_directories(PRODUCT PRIVATE include)
+target_include_directories(COMPARE PRIVATE include)
 
-target_link_libraries(PRODUCT PRIVATE 
+target_link_libraries(COMPARE PRIVATE 
     HISTUTILS
     ${OPENCV})

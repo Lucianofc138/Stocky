@@ -27,13 +27,36 @@ Hist::Hist(const cv::Mat &src_, std::vector<int> &n_bins_,
 {
 }
 
+Hist::Hist(const Hist& other)
+{
+    flags = 0;
+    dims = 0;
+    if (other.src.empty())
+        return;
+
+    setMembers(other);
+    resizeHist();
+}
+
+Hist& Hist::operator=(const Hist& other)
+{
+    flags = 0;
+    dims = 0;
+    if (other.src.empty())
+        return *this;
+
+    setMembers(other);
+    resizeHist();
+    return *this;
+}
+
 void Hist::loadSrc(const cv::Mat& src_, std::vector<int> &n_bins_,
         std::vector<HistRange> &ranges_, const cv::Mat& mask_)
 {
+    flags = 0;
+    dims = 0;
     if (src_.empty())
         return;
-
-    flags = 0;
 
     src = src_;
     mask = mask_;
@@ -41,11 +64,7 @@ void Hist::loadSrc(const cv::Mat& src_, std::vector<int> &n_bins_,
     bins = n_bins_;
     ranges = ranges_;
     
-    channelsHist.resize(dims);
-    bins.resize(dims);
-    ranges.resize(dims);
-    mean.resize(dims);
-    stdDev.resize(dims);
+    resizeHist();
 }
 
 void Hist::calcHistogram()
@@ -147,11 +166,11 @@ cv::Mat Hist::getNormalizedHist()
     return norm_hist.clone();
 }
 
-double Hist::calcDistance(Hist& other)
+double Hist::calcDistance(Hist& other, int method)
 {
     if ((flags & HIST_NORMALIZED) == 0)
         normalizeHist();
-    return cv::compareHist(norm_hist, other.getNormalizedHist(), cv::HISTCMP_BHATTACHARYYA);
+    return cv::compareHist(norm_hist, other.getNormalizedHist(), method);
 }
 
 std::vector<double> Hist::getMean()
@@ -166,4 +185,22 @@ std::vector<double> Hist::getStdDev()
     if ((flags & HIST_STD_DEV) == 0)
         calcMeanStdDev();
     return stdDev;
+}
+
+void Hist::setMembers(const Hist& other)
+{
+    src = other.src;
+    mask = other.mask;
+    dims = other.src.channels();
+    bins = other.bins;
+    ranges = other.ranges;
+}
+
+void Hist::resizeHist()
+{
+    channelsHist.resize(dims);
+    bins.resize(dims);
+    ranges.resize(dims);
+    mean.resize(dims);
+    stdDev.resize(dims);
 }
