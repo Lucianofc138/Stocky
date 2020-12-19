@@ -9,7 +9,7 @@ En esta tarea participaron: Luciano Flores
 
 En este proyecto estamos desarrollando una herramienta para supermercados o establecimientos similares para que puedan *trackear* el *stock* o falta del mismo, entregando alertas a los reponedores cuando falte un producto en un pasillo o bien cuando haya alguno fuera de lugar.
 
-## Ejemplos de Funcionamiento actual
+## Ejemplos de Funcionamiento Hito 2
 
 ### Cambio de Perspectiva de imagen original
 
@@ -32,3 +32,4 @@ En este proyecto estamos desarrollando una herramienta para supermercados o esta
 Esto más tarde servirá para detecatar un producto fuera de lugar si se agrega un historial
 
 <img src="demo_images/distancia.jpg" width="500">
+

@@ -36,13 +36,20 @@ Floor::Floor(cv::Mat shelfImage, cv::Rect rect)
 {
     this->floorRect = rect;
     this->floorImage = shelfImage(rect);
-
-    
 }
+
+void Floor::updateImage(cv::Mat shelfImage){
+    this->floorImage = shelfImage(this->floorRect);
+}   
 
 cv::Rect Floor::getFloorRect()
 {
     return this->floorRect;
+}
+
+cv::Mat Floor::getFloorImage()
+{
+    return this->floorImage;
 }
 
 cv::Mat Floor::getEmptyMask()
@@ -81,17 +88,6 @@ void Floor::calcEmptyMask(cv::Mat src_img, int emptyThreshold)
 // -- SHELF CLASS METHODS DEFINITION ------------------------------------------
 // ----------------------------------------------------------------------------
 
-
-Shelf::Shelf(cv::Mat shelfImage)
-{
-    this->shelfImage = shelfImage.clone();
-    this->calcShelfInfo(shelfImage);
-    this->getShelfMask(shelfImage.rows, shelfImage.cols);
-    this->fillFloorsVect(shelfImage.rows, shelfImage.cols);
-    //this->paintFloorRects(shelfImage);
-    this->emptyThreshold = 160;
-}
-
 Shelf::Shelf(cv::Mat shelfImage, int emptyThreshold)
 {
     this->shelfImage = shelfImage.clone();
@@ -107,6 +103,12 @@ void Shelf::updateImage(cv::Mat frame)
     this->shelfImage = frame.clone();
     cv::imshow("video", this->shelfImage);
 
+    for(int i=0; i<this->floors.size(); i++){
+        floors.at(i).updateImage(this->shelfImage);
+    }
+
+    cv::imshow("piso", this->floors.at(1).getFloorImage());
+
 }
 
 
@@ -117,7 +119,7 @@ void Shelf::calcShelfInfo(cv::Mat image)
     int delta = 0;
     int ddepth = CV_16S;
 
-    imshow("Original", image);
+    //imshow("Original", image);
 
     cv::Mat src, src_gray, grad_y;
     // Remove noise by blurring with a Gaussian filter ( kernel size = 3 )
