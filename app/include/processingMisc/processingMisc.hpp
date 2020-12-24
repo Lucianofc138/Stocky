@@ -5,9 +5,11 @@
 #include <opencv2/highgui.hpp>
 #include <opencv2/features2d.hpp>
 #include <opencv2/xfeatures2d.hpp>
+#include <opencv2/highgui.hpp>
+#include <opencv2/imgproc.hpp>
+#include <opencv2/bgsegm.hpp>
 
 #include <map>
-#include <opencv2/imgproc.hpp>
 
 
 
@@ -35,9 +37,44 @@ namespace stky
 
     void colorBlobsInImage(cv::Mat& image, cv::Mat& blobsMask, cv::Scalar color );
 
+
+    // ------------------------ MOVEMENT MASK -----------------------------------
+
+    struct BgSustractorInfo
+    {
+        int historyMOG = 130;
+        int nmixtures = 5;
+        double backgroundRatio = 0.07;
+        double learningRate = 0.0005;
+        double varThreshold = 25;
+        bool bShadowDetection = true;
+        cv::Ptr<cv::BackgroundSubtractorMOG2> mog;
+    };
+
+    class RelevantFrames
+    {
+        public:
+            RelevantFrames( cv::Mat bg_ = cv::Mat() );
+
+            void initMog();
+
+            cv::Mat getFg();
+
+            void setFrame(cv::Mat frame_);
+
+            void calcFg();
+            
+        private:
+            cv::Mat frame;
+            cv::Mat bg;
+            cv::Mat fg;
+            int frameNumber;
+            BgSustractorInfo bgSustractor;
+
+            void getMovementMask();
+            
+    };
+
 }
-
-
-
 
 #endif
