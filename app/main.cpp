@@ -1,35 +1,19 @@
 #include <iostream>
+#include <string>
+#include <opencv2/core/persistence.hpp>
 
-#include <opencv2/opencv.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-#include "processingMisc/processingMisc.hpp"
-
-using namespace std;
-
-int main(int argc, char *argv[])
+int main( int argc, char* argv[] )
 {
-    stky::RelevantFrames pictures;
-    pictures.initMog();
-	
-	cv::VideoCapture capture;
-    capture.open(0);
-	if (!capture.isOpened())
-		throw "Error opening camara";
-	cv::Mat frame;
-	for (;;)
-	{
-		capture >> frame;
-		if (frame.empty())
-			break;
-		cv::resize(frame, frame, cv::Size(0.45 * frame.cols, 0.45 * frame.rows));
-		pictures.setFrame(frame);
-		pictures.calcFg();
-        cv::imshow("Video", frame);
-		if (!pictures.getFg().empty())
-			cv::imshow("Mask", pictures.getFg());
-		cv::waitKey(30);
-	}
-	cv::waitKey(0);
-	return 0;
+    cv::FileStorage data("app/data/data.json", cv::FileStorage::READ);
+    cv::FileNode shelves = data["shelves"];
+    cv::FileNode prod = shelves[0]["products"][0];
+    
+    std::string str1 = prod.string();
+    if (shelves[0]["id"].string().compare("1")==0)
+        std::cout << "hola" << std::endl << std::endl;
+    // else
+    //     std::cout <<  shelves[0]["id"].string();
+    
+    // std::cout << shelves[0]["id"] << std::endl << std::endl;
+    return 0;
 }
