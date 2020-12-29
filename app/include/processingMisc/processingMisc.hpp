@@ -31,7 +31,7 @@ namespace stky
         std::vector<cv::Point2f> dst_pts;
     };
 
-    void scanFeaturesSlidingWindow(cv::Mat templateImg, cv::Mat floorImg, std::vector<cv::Rect> boxes);
+    void scanFeaturesSlidingWindow(cv::Mat templateImg, cv::Mat floorImg, std::vector<cv::Rect> &boxes);
 
     // ------------------------ DRAW RESOURCES -------------------------------
 
@@ -45,7 +45,7 @@ namespace stky
         int historyMOG = 130;
         int nmixtures = 5;
         double backgroundRatio = 0.07;
-        double learningRate = 0.0005;
+        double learningRate = 0.005;
         double varThreshold = 25;
         bool bShadowDetection = true;
         cv::Ptr<cv::BackgroundSubtractorMOG2> mog;

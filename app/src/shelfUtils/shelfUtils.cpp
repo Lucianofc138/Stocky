@@ -25,17 +25,24 @@
 
 Crate::Crate(cv::Mat srcImg_, cv::Rect reg_)
 {
-    //Pasarle imagen a Right Model
+    this->regionInFloor = reg_;
+    this->productIsRight = true;
+    this->isEmpty = false;
+    
 }
 
 // ----------------------------------------------------------------------------
 // -- FLOOR CLASS METHODS DEFINITION ------------------------------------------
 // ----------------------------------------------------------------------------
 
-Floor::Floor(cv::Mat shelfImage, cv::Rect rect)
+Floor::Floor(cv::Mat shelfImage, cv::Rect rect, 
+             std::vector< cv::FileNode > productsNodes_,
+             std::vector< std::string > productsList_)
 {
     this->floorRect = rect;
     this->floorImage = shelfImage(rect);
+    this->productsNodes = &productsNodes_;
+    this->productsList = productsList_;
 }
 
 void Floor::updateImage(cv::Mat shelfImage){
@@ -58,9 +65,9 @@ cv::Mat Floor::getEmptyMask()
 }
 
 void Floor::setProducts( std::vector< std::string > products_ ){
-    for(int i=0; i<products_.size(); i++){
-        products.push_back(products_.at(i));
-    }
+    // for(int i=0; i<products_.size(); i++){
+    //     products.push_back(products_.at(i));
+    // }
 }
 
 void Floor::calcEmptyMask(cv::Mat src_img, int emptyThreshold)
@@ -92,61 +99,116 @@ void Floor::calcEmptyMask(cv::Mat src_img, int emptyThreshold)
 
 void Floor::calcCrates()
 {
-    std::vector<cv::Rect> boxes;
-    stky::scanFeaturesSlidingWindow(tmpltImg, floorImage, boxes);
+    cv::FileStorage json = cv::FileStorage("app/data/data.json", cv::FileStorage::READ);    
+    cv::FileNode allProducts = json["products"];
+    for (int i = 0; i<allProducts.size(); i++){
+        cv::FileNode currentProduct = allProducts[i];
+        for(int j=0; j<productsList.size(); j++){
+            std::string name1 = currentProduct["name"].string();
+            std::string nameInList = productsList.at(j);
+            if ( name1.compare(nameInList) == 0){
+                std::string commonPath = currentProduct["path"].string();
+                std::string name = currentProduct["name"].string();
+                for(int k=0; k< 10; k++){
+                    std::string num = std::to_string(k);
+                    std::string path = commonPath + name + num +".jpg";
+                    cv::Mat templtImg = cv::imread(path);
+                    // cv::imshow(num, templtImg);
+                    std::vector<cv::Rect> boxes;
+                    stky::scanFeaturesSlidingWindow(templtImg, floorImage, boxes);
+                    for (int l=0; l<boxes.size(); l++){
+                        Crate tmpCrate(this->floorImage, boxes.at(l));
+                        this->crates.push_back(tmpCrate);
+                    }
+                    if (boxes.size() > 0)
+                        boxes.clear();
+                }
+                break;
+            }
+        }
+    }
 }
 // ----------------------------------------------------------------------------
 // -- SHELF CLASS METHODS DEFINITION ------------------------------------------
 // ----------------------------------------------------------------------------
 
-Shelf::Shelf(cv::Mat shelfImage, int emptyThreshold, std::string jsonPath, int id)
+
+Shelf::Shelf(cv::Mat shelfImage, int emptyThreshold,
+             std::string jsonPath, bool chargeFromJson, int id)
 {
-    if (jsonPath.compare("")!=0)
+    if (jsonPath.compare("")!=0 ) // path no nulo
     {
         this->shelfImage = shelfImage.clone();
-        this->calcShelfInfo(shelfImage);
+        if (chargeFromJson)
+            Shelf::loadShelfFromJson(jsonPath, id);
+        else{
+            this->calcShelfInfo(shelfImage);
+
+        }
         this->getShelfMask(shelfImage.rows, shelfImage.cols);
         this->fillFloorsVect(shelfImage.rows, shelfImage.cols);
         //this->paintFloorRects(shelfImage);
         this->emptyThreshold = emptyThreshold;
-    }
-    else
+    } 
+    else // path vacío
     {
-        Shelf::loadJSON(jsonPath, id);
+        this->shelfImage = shelfImage.clone();
     }
-    
 }
 
-// Shelf::Shelf(std::string jsonPath, int id)
-// {
-//     Shelf::loadJSON(jsonPath, id);
-// }
-
-void Shelf::loadJSON(std::string jsonPath, int id)
+void Shelf::loadShelfFromJson(std::string jsonPath, int id)
 {
-    cv::FileStorage json("app/data/data.json", cv::FileStorage::READ);
+    cv::FileStorage json = cv::FileStorage("app/data/data.json", cv::FileStorage::READ);
+
+    // cv::FileStorage json;
+    // try{
+    //     json.open("app/data/data.json", cv::FileStorage::READ);
+    // }catch(cv::Exception ex)
+    // {
+    //     return;
+    // }
     cv::FileNode shelves = json["shelves"];
     for(int i = 0; i<shelves.size(); i++){
         if(shelves[i]["id"].string().compare(std::to_string(id)) == 0){
-            cv::FileNode shelf = shelves[i];
-            std::string thick_str = shelf["thickness"].string();
+            cv::FileNode shelfNode = shelves[i];
+            std::string thick_str = shelfNode["thickness"].string();
             thickness = stoi( thick_str );
 
-            for(int j = 0; j< shelf["centers"].size(); j++){
-                std::string center_str = shelf["centers"][i].string();
+            for(int j = 0; j< shelfNode["centers"].size(); j++){
+                std::string center_str = shelfNode["centers"][j].string();
                 centers.push_back(stoi(center_str));
             }
 
-            for(int j = 0; j< shelf["products"].size(); j++){
-                std::string product_str = shelf["products"][i].string();
-                products.push_back(product_str);
+            for(int j = 0; j< shelfNode["products"].size(); j++){
+                std::string product_str = shelfNode["products"][i].string();
+                productsList.push_back(product_str);
             }
-
             break;
         }
     }
-    if(!shelfImage.empty()){
+    loadProductsFromJson(jsonPath, id);
+    if( !shelfImage.empty() )
         fillFloorsVect(shelfImage.rows, shelfImage.cols);
+}
+
+void Shelf::loadProductsFromJson(std::string jsonPath, int id){
+    // cv::FileStorage json = cv::FileStorage("app/data/data.json", cv::FileStorage::READ);
+    cv::FileStorage json;
+    try{
+        json.open("app/data/data.json", cv::FileStorage::READ);
+    }catch(cv::Exception ex)
+    {
+        return;
+    }
+    cv::FileNode products = json["products"];
+    for (int i=0; i<products.size(); i++){
+        cv::FileNode tmp = products[i];
+        std::string tmpName = tmp["name"].string();
+        for (int j=0; j<productsList.size(); j++){
+            if ( tmpName.compare(productsList.at(j))==0 ){
+                productsNodes.push_back(tmp);
+            }
+        }
     }
 }
 
@@ -260,7 +322,7 @@ void Shelf::fillFloorsVect(int height, int width)
             if (this->centers.at(i) > 2 * thick)
             {
                 cv::Rect temp_rect(0, thick / 2, width, this->centers.at(i) - thick);
-                Floor temp_floor(shelfImage, temp_rect);
+                Floor temp_floor(shelfImage, temp_rect, productsNodes, productsList);
                 this->floors.push_back(temp_floor);
             }
         }
@@ -268,7 +330,7 @@ void Shelf::fillFloorsVect(int height, int width)
 
         cv::Rect temp_rect(0, this->centers.at(i) + thick / 2, width,
                            this->centers.at(i + 1) - this->centers.at(i) - thick);
-        Floor temp_floor(shelfImage, temp_rect);
+        Floor temp_floor(shelfImage, temp_rect, productsNodes, productsList);
         this->floors.push_back(temp_floor);
     }
 
@@ -280,13 +342,13 @@ void Shelf::fillFloorsVect(int height, int width)
         int a = height - this->centers.at(last_index) - 1;
         cv::Rect temp_rect(0, this->centers.at(last_index) + thick / 2, width,
                            height - this->centers.at(last_index) - thick / 2 - 1);
-        Floor temp_floor(shelfImage, temp_rect);
+        Floor temp_floor(shelfImage, temp_rect, productsNodes, productsList);
         this->floors.push_back(temp_floor);
     }
 
-    for( int i=0; i < floors.size(); i++){
-        floors.at(i).setProducts(products);
-    }
+    // for( int i=0; i < floors.size(); i++){
+    //     floors.at(i).setProducts(products);
+    // }
 
 }
 
@@ -303,7 +365,8 @@ void Shelf::calcEmptyMask()
         cv::Mat floorMask = this->floors.at(i).getEmptyMask();
         floorMask.copyTo(this->emptyMask(floorRect));
     }
-    // cv::imshow("Máscara Espacios Vacío", this->emptyMask);
+    cv::imshow("Máscara Espacios Vacío", this->emptyMask);
+    cv::waitKey(0);
 }
 
 void Shelf::calcShelfMask(int height, int width)
@@ -319,7 +382,7 @@ void Shelf::calcShelfMask(int height, int width)
              cv::LINE_8, 0);
     }
 
-    // cv::imshow("Mascara", mask);
+    cv::imshow("Mascara", mask);
 }
 
 int Shelf::avrg_row(std::vector<int> rows)
@@ -393,3 +456,4 @@ Floor Shelf::getFloor(int floor)
 {
     return this->floors.at(floor);
 }
+

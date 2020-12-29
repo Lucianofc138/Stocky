@@ -44,7 +44,7 @@ class Crate
         bool productIsRight;
         bool isEmpty;
         
-        void updateStatus(); // compara producto actual con correcto y actualiza
+        void updateStatus();
 
         void checkCurrentModelTime();
 
@@ -56,7 +56,9 @@ class Crate
 class Floor
 { 
     public:
-        Floor(cv::Mat shelfImage, cv::Rect rect);
+        Floor(cv::Mat shelfImage, cv::Rect rect, 
+             std::vector< cv::FileNode > productsNodes_,
+             std::vector< std::string > productsList_);
 
         void updateImage(cv::Mat shelfImage);
         
@@ -75,10 +77,11 @@ class Floor
     private:
         cv::Rect floorRect;
         cv::Mat floorImage;
-        std::vector< Crate > products;
+        std::vector< Crate > crates;
         cv::Mat emptyMask;
         cv::Mat foregroundMask;
-        std::vector< std::string > products;
+        std::vector< cv::FileNode >* productsNodes;
+        std::vector< std::string > productsList;
 
 }; 
 
@@ -87,11 +90,13 @@ class Shelf
     public:
 
         Shelf(  cv::Mat shelfImage = cv::Mat(), int emptyThreshold=160,
-                std::string jsonPath = "", int id = 0    );
+                std::string jsonPath = "", bool chargeFromJson = false, int id = 0);
 
-        // Shelf(std::string jsonPath, int id);
+        void loadShelfFromJson(std::string jsonPath, int id);
 
-        void loadJSON(std::string jsonPath, int id);
+        void loadProductsFromJson(std::string jsonPath, int id);
+
+        void saveJSON();
 
         void updateImage(cv::Mat frame);
 
@@ -109,13 +114,19 @@ class Shelf
 
         Floor getFloor(int floor);
 
+        // void test_initProdTemps()
+
     private:
         int emptyThreshold;
 
         int thickness;
         std::vector<int> centers;
         std::vector<Floor> floors;
-        std::vector< std::string > products;
+        
+        std::vector< std::string > productsList;
+        std::vector< cv::FileNode > productsNodes;
+        cv::FileNode shelfNode;
+
         cv::Mat shelfMask;
         cv::Mat emptyMask;
         cv::Mat shelfImage;

@@ -3,9 +3,9 @@
     [
         {
             "id": "1",
-            "products": ["cereal","cookies"],
+            "products": ["cereal"],
             "thickness": "18",
-            "centers": ["4", "180", "560", "730"],
+            "centers": ["4", "180", "369", "560", "730"],
             "corners_cw": [
                 { "x": "0",   "y": "0"},
                 { "x": "732", "y": "0"},
@@ -24,6 +24,13 @@
                 { "x": "732", "y": "1024"},
                 { "x": "0",   "y": "1024"}
             ]
+        }
+    ],
+    "products":[
+        {
+            "id": "1",
+            "name": "cereal",
+            "path": "samples/templateImg/cereal/"
         }
     ]
 }

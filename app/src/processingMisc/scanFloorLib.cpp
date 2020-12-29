@@ -218,7 +218,7 @@ namespace stky
         corners.push_back(cv::Point2f(0, img.rows));
     }
 
-    void scanFeaturesSlidingWindow(cv::Mat templateImg, cv::Mat floorImg, std::vector<cv::Rect> boxes)
+    void scanFeaturesSlidingWindow(cv::Mat templateImg, cv::Mat floorImg, std::vector<cv::Rect> &boxes)
     {
         int window_width = floorImg.rows * templateImg.cols / templateImg.rows;
         int x_step = 0.25 * window_width;
@@ -244,8 +244,8 @@ namespace stky
                 break;
             }
             roi_img = floorImg(roi);
-            imshow("Current Rect", roi_img);
-            cv::waitKey(0);
+            // imshow("Current Rect", roi_img);
+            // cv::waitKey(0);
 
             MatchInfo match;
             RelevantPoints relevantPts;
@@ -268,12 +268,12 @@ namespace stky
             drawMatches(templateImg, match.keypts_temp, roi_img, match.keypts_roi, match.good_matches,
                         img_matches, cv::Scalar::all(-1), cv::Scalar::all(-1), std::vector<char>(),
                         cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
-            cv::imshow("Good Matches", img_matches);
-            cv::waitKey(0);
+            // cv::imshow("Good Matches", img_matches);
+            // cv::waitKey(0);
             cv::Rect box = getRectFromCorners(dstCorners, floorImg.size());
             if (box.empty())
                 continue;
-            imshow("box", floorImg(box));
+            // imshow("box", floorImg(box));
             boxes.push_back(box);
             // cv::Mat img_matches;
             // drawMatches(templateImg, match.keypts_temp, roi_img, match.keypts_roi, match.good_matches,
