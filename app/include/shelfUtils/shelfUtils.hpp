@@ -14,35 +14,41 @@
 #include "histUtils/histUtils.hpp"
 #include "processingMisc/processingMisc.hpp"
 
-// class CrateModel
-// {
-//     public:
-//         CrateModel(cv::Mat srcImg_, cv::Rect reg_, cv::Mat templateImg_);
+class CrateModel
+{
+    public:
+        CrateModel();                     
+        // CrateModel(cv::Mat srcImg_, cv::Rect reg_, cv::Mat templateImg_);
+        void loadCrate(cv::Mat srcImg_, cv::Rect reg_, cv::Mat templateImg_);
+        void updateCrateImg(cv::Mat img_);
 
-        
-
-
-
-//     private:
-//         void calcHist();
-//         cv::Mat templateImage;
-//         cv::Mat crateImage;
-//         Hist histogram;
-//         std::time_t init_time;
-//         std::time_t finish_time;
-// };
+    private:
+        void calcHist();
+        cv::Mat templateImage;
+        cv::Mat crateImage;
+        // Hist histogram;
+        std::time_t init_time;
+        std::time_t finish_time;
+};
 
 class Crate
 {
     public:
-        Crate(cv::Mat srcImg_, cv::Rect reg_);
+    
+        Crate(cv::Mat srcImg_, cv::Rect reg_, cv::Mat prodTmplt);
+
+        void updateCrateImg(cv::Mat floorImg_);
+
+        cv::Rect getRect();
 
     private:
         cv::Rect regionInFloor;
-        // CrateModel currentModel;
-        // CrateModel rightModel;
+        CrateModel currentModel;
+        CrateModel rightModel;
         bool productIsRight;
         bool isEmpty;
+        std::time_t lastUpdate;
+        bool checkedSinceLastUpdate;
         
         void updateStatus();
 
@@ -56,11 +62,15 @@ class Crate
 class Floor
 { 
     public:
-        Floor(cv::Mat shelfImage, cv::Rect rect, 
+        Floor(cv::Mat shelfImage, cv::Rect rect, cv::Mat fgMask_,std::string path_, 
              std::vector< cv::FileNode > productsNodes_,
              std::vector< std::string > productsList_);
 
         void updateImage(cv::Mat shelfImage);
+
+        void setFgMask(cv::Mat fg_);
+
+        void checkIfFgIntersectsCrates();
         
         cv::Rect getFloorRect();
 
@@ -74,14 +84,17 @@ class Floor
 
         void calcCrates();
 
+        void yaBastaFreezer();
+
     private:
         cv::Rect floorRect;
         cv::Mat floorImage;
         std::vector< Crate > crates;
         cv::Mat emptyMask;
         cv::Mat foregroundMask;
-        std::vector< cv::FileNode >* productsNodes;
+        std::vector< cv::FileNode > productsNodes;
         std::vector< std::string > productsList;
+        std::string dataPath;
 
 }; 
 
@@ -89,18 +102,22 @@ class Shelf
 { 
     public:
 
-        Shelf(  cv::Mat shelfImage = cv::Mat(), int emptyThreshold=160,
-                std::string jsonPath = "", bool chargeFromJson = false, int id = 0);
+        Shelf(  cv::Mat shelfImage_ = cv::Mat(), int emptyThreshold=160,
+                std::string const jsonPath = "", bool chargeFromJson = false, int id = 0);
 
-        void loadShelfFromJson(std::string jsonPath, int id);
+        void loadShelfFromJson(std::string const  jsonPath, int id);
 
-        void loadProductsFromJson(std::string jsonPath, int id);
+        void loadProductsFromJson(std::string const jsonPath, int id);
 
         void saveJSON();
 
         void updateImage(cv::Mat frame);
 
+        void updateFgMask(cv::Mat fg_);
+
         // -----------------------------------------
+
+        void checkIfFgIntersectsFloors();
 
         void calcShelfInfo(cv::Mat image);
 
@@ -126,6 +143,7 @@ class Shelf
         std::vector< std::string > productsList;
         std::vector< cv::FileNode > productsNodes;
         cv::FileNode shelfNode;
+        std::string dataPath;
 
         cv::Mat shelfMask;
         cv::Mat emptyMask;

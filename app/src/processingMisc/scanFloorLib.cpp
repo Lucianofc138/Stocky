@@ -273,13 +273,13 @@ namespace stky
             cv::Rect box = getRectFromCorners(dstCorners, floorImg.size());
             if (box.empty())
                 continue;
-            // imshow("box", floorImg(box));
+            imshow("box", floorImg(box));
             boxes.push_back(box);
             // cv::Mat img_matches;
             // drawMatches(templateImg, match.keypts_temp, roi_img, match.keypts_roi, match.good_matches,
             //             img_matches, cv::Scalar::all(-1), cv::Scalar::all(-1), std::vector<char>(),
             //             cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
-            // cv::imshow("Good Matches", img_matches);
+            cv::imshow("Good Matches", img_matches);
             // cv::waitKey(0);
 
             if (cornersChecked)

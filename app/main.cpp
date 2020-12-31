@@ -20,19 +20,21 @@ int main( int argc, char* argv[] )
         cout << "Could not open or find the image!\n" << endl;
         return -1;
     }
-    // cv::imshow("Shelf", shelfImg );
-    // cv::waitKey(0);
+    cv::imshow("Shelf", shelfImg );
+    cv::waitKey(0);
 
-    Shelf shelf1(shelfImg, 160, path, true, 1);
+    Shelf shelf1(shelfImg, 140, path, true, 1);
         
     Floor floor1 = shelf1.getFloor(0);
     cv::Mat floorImage = shelfImg(floor1.getFloorRect());
     imshow("Piso 2", floorImage);
+    
+    // floor1.calcCrates();
 
-    floor1.calcCrates();
-
-    // std::vector<cv::Rect> boxes;
-    // stky::scanFeaturesSlidingWindow(tmpltImg, floorImage, boxes);
+    Mat mask = imread( "masKTest.jpg", IMREAD_GRAYSCALE);
+    
+    shelf1.updateFgMask(mask);
+    shelf1.checkIfFgIntersectsFloors();
 
     cv::waitKey(0);
     return 0;

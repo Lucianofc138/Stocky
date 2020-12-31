@@ -3,51 +3,111 @@
 // ----------------------------------------------------------------------------
 // -- CRATE MODEL CLASS METHODS DEFINITION ------------------------------------
 // ----------------------------------------------------------------------------
+CrateModel::CrateModel()
+{
+    this->init_time = std::time(nullptr);
+    this->finish_time = -1;
+}
+
 // CrateModel::CrateModel(cv::Mat srcImg_, cv::Rect reg_, cv::Mat templateImg_)
 // {
 //     this->templateImage = templateImg_;
 //     this->crateImage = srcImg_(reg_);
 //     this->init_time = std::time(nullptr);
 //     this->finish_time = -1;
-    
 // }
+void CrateModel::loadCrate(cv::Mat srcImg_, cv::Rect reg_, cv::Mat templateImg_)
+{
+    this->templateImage = templateImg_;
+    this->crateImage = srcImg_(reg_);
 
-// void CrateModel::calcHist()
-// {
+}
+void CrateModel::updateCrateImg(cv::Mat img_)
+{
+    this->crateImage = img_;
+}
+
+void CrateModel::calcHist()
+{
     
     
-// }
+}
 
 
 // ----------------------------------------------------------------------------
 // -- CRATE CLASS METHODS DEFINITION ------------------------------------------
 // ----------------------------------------------------------------------------
 
-Crate::Crate(cv::Mat srcImg_, cv::Rect reg_)
+Crate::Crate(cv::Mat srcImg_, cv::Rect reg_, cv::Mat prodTmplt)
 {
+    this->currentModel.loadCrate(srcImg_, reg_, prodTmplt);
+    this->rightModel.loadCrate(srcImg_, reg_, prodTmplt);
     this->regionInFloor = reg_;
     this->productIsRight = true;
-    this->isEmpty = false;
-    
+    this->isEmpty = false;  
+}
+
+void Crate::updateCrateImg(cv::Mat floorImg_){
+    cv::Mat crateImg = floorImg_(this->regionInFloor);
+    this->currentModel.updateCrateImg(crateImg);
+    if (this->productIsRight)
+        this->rightModel.updateCrateImg(crateImg);
+}
+
+cv::Rect Crate::getRect(){
+    return this->regionInFloor;
 }
 
 // ----------------------------------------------------------------------------
 // -- FLOOR CLASS METHODS DEFINITION ------------------------------------------
 // ----------------------------------------------------------------------------
 
-Floor::Floor(cv::Mat shelfImage, cv::Rect rect, 
+Floor::Floor(cv::Mat shelfImage, cv::Rect rect, cv::Mat fgMask_, std::string path_,  
              std::vector< cv::FileNode > productsNodes_,
              std::vector< std::string > productsList_)
 {
     this->floorRect = rect;
     this->floorImage = shelfImage(rect);
-    this->productsNodes = &productsNodes_;
+    this->productsNodes = productsNodes_;
     this->productsList = productsList_;
+    this->dataPath = path_;
+    this->foregroundMask = fgMask_;
 }
 
 void Floor::updateImage(cv::Mat shelfImage){
     this->floorImage = shelfImage(this->floorRect);
 }   
+
+void Floor::setFgMask(cv::Mat fg_){
+    this->foregroundMask = fg_(this->floorRect);
+}
+
+void Floor::checkIfFgIntersectsCrates(){
+    int diameter = (this->foregroundMask.cols)/(10); 
+    cv::Size size(diameter, diameter);
+    cv::Mat structEl = getStructuringElement(cv::MORPH_ELLIPSE, size);
+    cv::Mat dilatedFg;
+    cv::dilate(this->foregroundMask, dilatedFg, structEl, cv::Point(-1, -1));
+
+    for(int k = 0; k < this->crates.size(); k++)
+    {
+        Crate currCrate = this->crates.at(k);
+        cv::Rect crateRect = currCrate.getRect();
+        cv::Mat crateDilMask = dilatedFg(floorRect);
+        uchar* data = crateDilMask.data;
+        int maskPix = 0;
+        for(int i = 0; i < crateDilMask.rows; i++) {
+            for(int j = 0; j < crateDilMask.cols; j++) {
+            if (data[i*crateDilMask.step + j*crateDilMask.channels() + 0] > 128)
+                maskPix++;
+            }
+            if (maskPix > crateDilMask.rows*crateDilMask.cols*0.05){
+                currCrate.updateCrateImg(this->floorImage(crateRect));
+                break;
+            }
+        }
+    }
+}
 
 cv::Rect Floor::getFloorRect()
 {
@@ -82,25 +142,42 @@ void Floor::calcEmptyMask(cv::Mat src_img, int emptyThreshold)
 
     // cv::imshow("FloorThresh", thresh);
 
-    cv::Size dilate_size(thresh.cols / 50, thresh.rows * 2);
-    cv::Mat dilate_struct = getStructuringElement(cv::MORPH_RECT, dilate_size);
-    cv::dilate(thresh, mask, dilate_struct, cv::Point(-1, -1));
+    cv::Size erode_size1(thresh.cols / 200, thresh.rows / 15 );
+    cv::Mat erode_struct1 = getStructuringElement(cv::MORPH_RECT, erode_size1);
+    cv::erode(thresh, mask, erode_struct1, cv::Point(-1, -1));
 
-    cv::Size size2(thresh.cols / 50, thresh.cols / 50);
-    cv::Mat struct2 = getStructuringElement(cv::MORPH_RECT, size2);
-    cv::erode(mask, mask, struct2, cv::Point(-1, -1), 1, cv::BORDER_ISOLATED);
+    // cv::imshow("mask1", mask);
+
+    cv::Size dilate_size1(thresh.cols / 40, thresh.rows * 2);
+    cv::Mat dilate_struct1 = getStructuringElement(cv::MORPH_RECT, dilate_size1);
+    cv::dilate(mask, mask, dilate_struct1, cv::Point(-1, -1));
+
+    // cv::imshow("mask2", mask);
+
+    cv::Size size2(thresh.cols / 25, 1);
+    cv::Mat dilate_struct2 = getStructuringElement(cv::MORPH_RECT, size2);
+    cv::dilate(mask, mask, dilate_struct2, cv::Point(-1, -1));
+
+    // cv::imshow("mask3", mask);
+    
+    cv::Mat erode_struct2 = getStructuringElement(cv::MORPH_RECT, size2);
+    cv::erode(mask, mask, erode_struct2, cv::Point(-1, -1), 1, cv::BORDER_ISOLATED);
+
+    // cv::imshow("mask4", mask);
 
     cv::bitwise_not(mask, mask);
 
     // cv::imshow("FloorMask", mask);
+    // cv::waitKey(0);
 
     this->emptyMask = mask;
 }
 
 void Floor::calcCrates()
 {
-    cv::FileStorage json = cv::FileStorage("app/data/data.json", cv::FileStorage::READ);    
+    cv::FileStorage json = cv::FileStorage(this->dataPath, cv::FileStorage::READ);    
     cv::FileNode allProducts = json["products"];
+
     for (int i = 0; i<allProducts.size(); i++){
         cv::FileNode currentProduct = allProducts[i];
         for(int j=0; j<productsList.size(); j++){
@@ -113,13 +190,14 @@ void Floor::calcCrates()
                     std::string num = std::to_string(k);
                     std::string path = commonPath + name + num +".jpg";
                     cv::Mat templtImg = cv::imread(path);
-                    // cv::imshow(num, templtImg);
+                    cv::imshow("template", templtImg);
                     std::vector<cv::Rect> boxes;
                     stky::scanFeaturesSlidingWindow(templtImg, floorImage, boxes);
                     for (int l=0; l<boxes.size(); l++){
-                        Crate tmpCrate(this->floorImage, boxes.at(l));
+                        Crate tmpCrate(this->floorImage, boxes.at(l), templtImg);
                         this->crates.push_back(tmpCrate);
                     }
+                    cv::waitKey(0);
                     if (boxes.size() > 0)
                         boxes.clear();
                 }
@@ -128,45 +206,50 @@ void Floor::calcCrates()
         }
     }
 }
+
+void Floor::yaBastaFreezer(){
+    std::cout << "Detengan el semestre que me quiero bajar :'(" << std::endl;
+}
 // ----------------------------------------------------------------------------
 // -- SHELF CLASS METHODS DEFINITION ------------------------------------------
 // ----------------------------------------------------------------------------
 
-
-Shelf::Shelf(cv::Mat shelfImage, int emptyThreshold,
-             std::string jsonPath, bool chargeFromJson, int id)
+Shelf::Shelf(cv::Mat shelfImage_, int emptyThreshold,
+             std::string const jsonPath, bool chargeFromJson, int id)
 {
+    this->shelfImage = shelfImage_.clone();
     if (jsonPath.compare("")!=0 ) // path no nulo
     {
-        this->shelfImage = shelfImage.clone();
+        this->dataPath = jsonPath;
+        this->emptyThreshold = emptyThreshold;
+        loadProductsFromJson(jsonPath, id);
         if (chargeFromJson)
             Shelf::loadShelfFromJson(jsonPath, id);
-        else{
-            this->calcShelfInfo(shelfImage);
-
-        }
-        this->getShelfMask(shelfImage.rows, shelfImage.cols);
-        this->fillFloorsVect(shelfImage.rows, shelfImage.cols);
+        else
+            this->calcShelfInfo(shelfImage_);
+        
+        this->calcShelfMask(shelfImage_.rows, shelfImage_.cols);
+        this->fillFloorsVect(shelfImage_.rows, shelfImage_.cols);
+        this->calcEmptyMask();
         //this->paintFloorRects(shelfImage);
-        this->emptyThreshold = emptyThreshold;
+        
     } 
-    else // path vacío
+    else
     {
-        this->shelfImage = shelfImage.clone();
+        std::cerr << "Invalid path" << std::endl;
     }
 }
 
-void Shelf::loadShelfFromJson(std::string jsonPath, int id)
+void Shelf::loadShelfFromJson(std::string const jsonPath, int id)
 {
-    cv::FileStorage json = cv::FileStorage("app/data/data.json", cv::FileStorage::READ);
-
-    // cv::FileStorage json;
-    // try{
-    //     json.open("app/data/data.json", cv::FileStorage::READ);
-    // }catch(cv::Exception ex)
-    // {
-    //     return;
-    // }
+    // cv::FileStorage json = cv::FileStorage("app/data/data.json", cv::FileStorage::READ);
+    cv::FileStorage json;
+    try{
+        json.open("app/data/data.json", cv::FileStorage::READ);
+    }catch(cv::Exception ex)
+    {
+        return;
+    }
     cv::FileNode shelves = json["shelves"];
     for(int i = 0; i<shelves.size(); i++){
         if(shelves[i]["id"].string().compare(std::to_string(id)) == 0){
@@ -186,12 +269,9 @@ void Shelf::loadShelfFromJson(std::string jsonPath, int id)
             break;
         }
     }
-    loadProductsFromJson(jsonPath, id);
-    if( !shelfImage.empty() )
-        fillFloorsVect(shelfImage.rows, shelfImage.cols);
 }
 
-void Shelf::loadProductsFromJson(std::string jsonPath, int id){
+void Shelf::loadProductsFromJson(std::string const jsonPath, int id){
     // cv::FileStorage json = cv::FileStorage("app/data/data.json", cv::FileStorage::READ);
     cv::FileStorage json;
     try{
@@ -222,6 +302,49 @@ void Shelf::updateImage(cv::Mat frame)
     }
 
     // cv::imshow("piso", this->floors.at(1).getFloorImage());
+
+}
+
+void Shelf::updateFgMask(cv::Mat fg_)
+{
+    this->foregroundMask = fg_;
+
+    int diameter = (fg_.cols + fg_.rows)/ (2 * 20); 
+    cv::Size size(diameter, diameter);
+    cv::Mat structEl = getStructuringElement(cv::MORPH_ELLIPSE, size);
+    cv::erode(this->foregroundMask, this->foregroundMask, structEl, cv::Point(-1, -1));
+    cv::dilate(this->foregroundMask, this->foregroundMask, structEl, cv::Point(-1, -1));
+
+}
+
+void Shelf::checkIfFgIntersectsFloors()
+{
+    int diameter = (this->foregroundMask.cols)/(10); 
+    cv::Size size(diameter, diameter);
+    cv::Mat structEl = getStructuringElement(cv::MORPH_ELLIPSE, size);
+    cv::Mat dilatedFg;
+    cv::dilate(this->foregroundMask, dilatedFg, structEl, cv::Point(-1, -1));
+    
+    for(int k=0; k < this->floors.size(); k++){
+        cv::Rect floorRect = floors.at(k).getFloorRect();
+        cv::Mat floorMaskImg = dilatedFg(floorRect);
+        uchar* data = floorMaskImg.data;
+        int maskPix = 0;
+        // cv::imshow("floor", floorMaskImg);
+        // cv::waitKey(0);
+        for(int i = 0; i < floorMaskImg.rows; i++) {
+            for(int j = 0; j < floorMaskImg.cols; j++) {
+            if (data[i*floorMaskImg.step + j*floorMaskImg.channels() + 0] > 128)
+                maskPix++;
+            }
+            if (maskPix > floorMaskImg.rows*floorMaskImg.cols*0.1){
+                floors.at(k).checkIfFgIntersectsCrates();
+                break;
+            }
+            
+        }
+
+    }
 
 }
 
@@ -322,7 +445,8 @@ void Shelf::fillFloorsVect(int height, int width)
             if (this->centers.at(i) > 2 * thick)
             {
                 cv::Rect temp_rect(0, thick / 2, width, this->centers.at(i) - thick);
-                Floor temp_floor(shelfImage, temp_rect, productsNodes, productsList);
+                Floor temp_floor(shelfImage, temp_rect, this->foregroundMask,
+                                 dataPath, productsNodes, productsList);
                 this->floors.push_back(temp_floor);
             }
         }
@@ -330,7 +454,8 @@ void Shelf::fillFloorsVect(int height, int width)
 
         cv::Rect temp_rect(0, this->centers.at(i) + thick / 2, width,
                            this->centers.at(i + 1) - this->centers.at(i) - thick);
-        Floor temp_floor(shelfImage, temp_rect, productsNodes, productsList);
+        Floor temp_floor(shelfImage, temp_rect, this->foregroundMask, 
+                         dataPath, productsNodes, productsList);
         this->floors.push_back(temp_floor);
     }
 
@@ -342,7 +467,8 @@ void Shelf::fillFloorsVect(int height, int width)
         int a = height - this->centers.at(last_index) - 1;
         cv::Rect temp_rect(0, this->centers.at(last_index) + thick / 2, width,
                            height - this->centers.at(last_index) - thick / 2 - 1);
-        Floor temp_floor(shelfImage, temp_rect, productsNodes, productsList);
+        Floor temp_floor(shelfImage, temp_rect, this->foregroundMask,
+                         dataPath, productsNodes, productsList);
         this->floors.push_back(temp_floor);
     }
 
@@ -358,7 +484,7 @@ void Shelf::calcEmptyMask()
                       CV_8UC1, cv::Scalar(0, 0, 0));
     this->emptyMask = emptyMask.clone(); // Se puede mejorar un poco aca
 
-    for (int i; i < (this->floors.size()); i++)
+    for (int i=0; i < (this->floors.size()); i++)
     {
         this->floors.at(i).calcEmptyMask(shelfImage, this->emptyThreshold);
         cv::Rect floorRect = this->floors.at(i).getFloorRect();
@@ -382,7 +508,8 @@ void Shelf::calcShelfMask(int height, int width)
              cv::LINE_8, 0);
     }
 
-    cv::imshow("Mascara", mask);
+    //cv::imshow("Mascara", mask);
+    this->shelfMask = mask;
 }
 
 int Shelf::avrg_row(std::vector<int> rows)
