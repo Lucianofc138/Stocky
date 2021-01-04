@@ -2,7 +2,9 @@
 
 project("app")
 
-add_library(SHELFUTILS  src/shelfUtils/shelfUtils.cpp)
+add_library(SHELFUTILS  src/shelfUtils/Crate.cpp
+                        src/shelfUtils/Floor.cpp
+                        src/shelfUtils/Shelf.cpp)
 add_library(HISTUTILS   src/histUtils/histUtils.cpp)
 add_library(PERSUTILS   src/perspectiveUtils/perspectiveUtils.cpp)
 add_library(PROCMISC    src/processingMisc/scanFloorLib.cpp

@@ -24,10 +24,10 @@ int main( int argc, char* argv[] )
 
     Shelf shelf1(shelfImg, 140, path, true, 1);
         
-    // Floor floor1 = shelf1.getFloor(1);
-    // cv::Mat floorImage = shelfImg(floor1.getFloorRect());
+    Floor floor1 = shelf1.getFloor(0);
+    cv::Mat floorImage = shelfImg(floor1.getFloorRect());
     // imshow("Piso 2", floorImage);
-    // floor1.calcCrates();
+    floor1.calcCrates();
 
     // Mat mask = imread( "masKTest.jpg", IMREAD_GRAYSCALE);
     
