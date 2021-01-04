@@ -78,6 +78,7 @@ namespace stky
 
     void featureMatching(cv::Mat templateImg, cv::Mat srcImg, MatchInfo &match)
     {
+
         int minHessian = 400;
         cv::Ptr<cv::xfeatures2d::SURF> detector = cv::xfeatures2d::SURF::create(minHessian);
 
@@ -249,6 +250,9 @@ namespace stky
 
             MatchInfo match;
             RelevantPoints relevantPts;
+            // cv::imshow("temp", templateImg);
+            // cv::imshow("roi", roi_img);
+            // cv::waitKey(0);
             featureMatching(templateImg, roi_img, match);
             filterMatchesByDistance(match, roi_img.size(), 9);
             filterBestPoints(match, 6);
@@ -280,7 +284,7 @@ namespace stky
             //             img_matches, cv::Scalar::all(-1), cv::Scalar::all(-1), std::vector<char>(),
             //             cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
             cv::imshow("Good Matches", img_matches);
-            // cv::waitKey(0);
+            cv::waitKey(20);
 
             if (cornersChecked)
             {

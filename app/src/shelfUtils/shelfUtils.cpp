@@ -72,6 +72,7 @@ Floor::Floor(cv::Mat shelfImage, cv::Rect rect, cv::Mat fgMask_, std::string pat
     this->productsList = productsList_;
     this->dataPath = path_;
     this->foregroundMask = fgMask_;
+    this->calcCrates();
 }
 
 void Floor::updateImage(cv::Mat shelfImage){
@@ -186,18 +187,20 @@ void Floor::calcCrates()
             if ( name1.compare(nameInList) == 0){
                 std::string commonPath = currentProduct["path"].string();
                 std::string name = currentProduct["name"].string();
-                for(int k=0; k< 10; k++){
+                for(int k=0; k< 24; k++){
                     std::string num = std::to_string(k);
                     std::string path = commonPath + name + num +".jpg";
                     cv::Mat templtImg = cv::imread(path);
-                    cv::imshow("template", templtImg);
                     std::vector<cv::Rect> boxes;
+                    // cv::imshow("template", templtImg);
+                    // cv::imshow("floor", floorImage);
+                    // cv::waitKey(0);
                     stky::scanFeaturesSlidingWindow(templtImg, floorImage, boxes);
                     for (int l=0; l<boxes.size(); l++){
                         Crate tmpCrate(this->floorImage, boxes.at(l), templtImg);
                         this->crates.push_back(tmpCrate);
                     }
-                    cv::waitKey(0);
+                    // cv::waitKey(0);
                     if (boxes.size() > 0)
                         boxes.clear();
                 }
@@ -232,8 +235,8 @@ Shelf::Shelf(cv::Mat shelfImage_, int emptyThreshold,
         this->fillFloorsVect(shelfImage_.rows, shelfImage_.cols);
         this->calcEmptyMask();
         //this->paintFloorRects(shelfImage);
-        
-    } 
+
+    }
     else
     {
         std::cerr << "Invalid path" << std::endl;
@@ -315,6 +318,12 @@ void Shelf::updateFgMask(cv::Mat fg_)
     cv::erode(this->foregroundMask, this->foregroundMask, structEl, cv::Point(-1, -1));
     cv::dilate(this->foregroundMask, this->foregroundMask, structEl, cv::Point(-1, -1));
 
+    if(~floors.empty()){
+        for(int i=0; i < floors.size(); i++)
+        {
+            floors.at(i).setFgMask(this->foregroundMask);
+        }
+    }
 }
 
 void Shelf::checkIfFgIntersectsFloors()
@@ -471,11 +480,6 @@ void Shelf::fillFloorsVect(int height, int width)
                          dataPath, productsNodes, productsList);
         this->floors.push_back(temp_floor);
     }
-
-    // for( int i=0; i < floors.size(); i++){
-    //     floors.at(i).setProducts(products);
-    // }
-
 }
 
 void Shelf::calcEmptyMask() 

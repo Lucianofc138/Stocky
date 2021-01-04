@@ -1,5 +1,4 @@
 #include <iostream>
-#include <boost/property_tree/json_parser.hpp>
 
 #include <opencv2/highgui.hpp> //imshow
 
@@ -25,16 +24,15 @@ int main( int argc, char* argv[] )
 
     Shelf shelf1(shelfImg, 140, path, true, 1);
         
-    Floor floor1 = shelf1.getFloor(0);
-    cv::Mat floorImage = shelfImg(floor1.getFloorRect());
-    imshow("Piso 2", floorImage);
-    
+    // Floor floor1 = shelf1.getFloor(1);
+    // cv::Mat floorImage = shelfImg(floor1.getFloorRect());
+    // imshow("Piso 2", floorImage);
     // floor1.calcCrates();
 
-    Mat mask = imread( "masKTest.jpg", IMREAD_GRAYSCALE);
+    // Mat mask = imread( "masKTest.jpg", IMREAD_GRAYSCALE);
     
-    shelf1.updateFgMask(mask);
-    shelf1.checkIfFgIntersectsFloors();
+    // shelf1.updateFgMask(mask);
+    // shelf1.checkIfFgIntersectsFloors();
 
     cv::waitKey(0);
     return 0;

@@ -30,7 +30,8 @@
         {
             "id": "1",
             "name": "cereal",
-            "path": "samples/templateImg/cereal/"
+            "path": "samples/templateImg/cereal/",
+            "amount": "24"
         }
     ]
 }
