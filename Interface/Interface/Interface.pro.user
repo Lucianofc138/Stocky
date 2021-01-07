@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 4.12.4, 2020-11-29T19:07:44. -->
+<!-- Written by QtCreator 4.12.4, 2021-01-06T21:27:41. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -83,8 +83,8 @@
    <valuemap type="QVariantMap" key="ProjectExplorer.Target.BuildConfiguration.0">
     <value type="bool">true</value>
     <value type="int" key="EnableQmlDebugging">0</value>
-    <value type="QString" key="ProjectExplorer.BuildConfiguration.BuildDirectory">C:\Users\marti\Documents\ramos\2020-2\ELO328\Qt\build-untitled4-Desktop_Qt_5_9_9_MSVC2015_64bit-Debug</value>
-    <value type="QString" key="ProjectExplorer.BuildConfiguration.BuildDirectory.shadowDir">C:/Users/marti/Documents/ramos/2020-2/ELO328/Qt/build-untitled4-Desktop_Qt_5_9_9_MSVC2015_64bit-Debug</value>
+    <value type="QString" key="ProjectExplorer.BuildConfiguration.BuildDirectory">C:\Users\marti\Documents\ramos\2020-2\ELO328\Qt\build-Interface-Desktop_Qt_5_9_9_MSVC2015_64bit-Debug</value>
+    <value type="QString" key="ProjectExplorer.BuildConfiguration.BuildDirectory.shadowDir">C:/Users/marti/Documents/ramos/2020-2/ELO328/Qt/build-Interface-Desktop_Qt_5_9_9_MSVC2015_64bit-Debug</value>
     <valuemap type="QVariantMap" key="ProjectExplorer.BuildConfiguration.BuildStepList.0">
      <valuemap type="QVariantMap" key="ProjectExplorer.BuildStepList.Step.0">
       <value type="bool" key="ProjectExplorer.BuildStep.Enabled">true</value>
@@ -134,8 +134,8 @@
    <valuemap type="QVariantMap" key="ProjectExplorer.Target.BuildConfiguration.1">
     <value type="bool">true</value>
     <value type="int" key="EnableQmlDebugging">2</value>
-    <value type="QString" key="ProjectExplorer.BuildConfiguration.BuildDirectory">C:\Users\marti\Documents\ramos\2020-2\ELO328\Qt\build-untitled4-Desktop_Qt_5_9_9_MSVC2015_64bit-Release</value>
-    <value type="QString" key="ProjectExplorer.BuildConfiguration.BuildDirectory.shadowDir">C:/Users/marti/Documents/ramos/2020-2/ELO328/Qt/build-untitled4-Desktop_Qt_5_9_9_MSVC2015_64bit-Release</value>
+    <value type="QString" key="ProjectExplorer.BuildConfiguration.BuildDirectory">C:\Users\marti\Documents\ramos\2020-2\ELO328\Qt\build-Interface-Desktop_Qt_5_9_9_MSVC2015_64bit-Release</value>
+    <value type="QString" key="ProjectExplorer.BuildConfiguration.BuildDirectory.shadowDir">C:/Users/marti/Documents/ramos/2020-2/ELO328/Qt/build-Interface-Desktop_Qt_5_9_9_MSVC2015_64bit-Release</value>
     <valuemap type="QVariantMap" key="ProjectExplorer.BuildConfiguration.BuildStepList.0">
      <valuemap type="QVariantMap" key="ProjectExplorer.BuildStepList.Step.0">
       <value type="bool" key="ProjectExplorer.BuildStep.Enabled">true</value>
@@ -185,8 +185,8 @@
    <valuemap type="QVariantMap" key="ProjectExplorer.Target.BuildConfiguration.2">
     <value type="bool">true</value>
     <value type="int" key="EnableQmlDebugging">0</value>
-    <value type="QString" key="ProjectExplorer.BuildConfiguration.BuildDirectory">C:\Users\marti\Documents\ramos\2020-2\ELO328\Qt\build-untitled4-Desktop_Qt_5_9_9_MSVC2015_64bit-Profile</value>
-    <value type="QString" key="ProjectExplorer.BuildConfiguration.BuildDirectory.shadowDir">C:/Users/marti/Documents/ramos/2020-2/ELO328/Qt/build-untitled4-Desktop_Qt_5_9_9_MSVC2015_64bit-Profile</value>
+    <value type="QString" key="ProjectExplorer.BuildConfiguration.BuildDirectory">C:\Users\marti\Documents\ramos\2020-2\ELO328\Qt\build-Interface-Desktop_Qt_5_9_9_MSVC2015_64bit-Profile</value>
+    <value type="QString" key="ProjectExplorer.BuildConfiguration.BuildDirectory.shadowDir">C:/Users/marti/Documents/ramos/2020-2/ELO328/Qt/build-Interface-Desktop_Qt_5_9_9_MSVC2015_64bit-Profile</value>
     <valuemap type="QVariantMap" key="ProjectExplorer.BuildConfiguration.BuildStepList.0">
      <valuemap type="QVariantMap" key="ProjectExplorer.BuildStepList.Step.0">
       <value type="bool" key="ProjectExplorer.BuildStep.Enabled">true</value>
@@ -308,8 +308,8 @@
     </valuelist>
     <value type="int" key="PE.EnvironmentAspect.Base">2</value>
     <valuelist type="QVariantList" key="PE.EnvironmentAspect.Changes"/>
-    <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">Qt4ProjectManager.Qt4RunConfiguration:C:/Users/marti/Documents/ramos/2020-2/ELO328/Qt/untitled4/untitled4.pro</value>
-    <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey">C:/Users/marti/Documents/ramos/2020-2/ELO328/Qt/untitled4/untitled4.pro</value>
+    <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">Qt4ProjectManager.Qt4RunConfiguration:C:/Users/marti/Documents/ramos/2020-2/ELO328/Qt/Interface/Interface.pro</value>
+    <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey">C:/Users/marti/Documents/ramos/2020-2/ELO328/Qt/Interface/Interface.pro</value>
     <value type="QString" key="RunConfiguration.Arguments"></value>
     <value type="bool" key="RunConfiguration.Arguments.multi">false</value>
     <value type="QString" key="RunConfiguration.OverrideDebuggerStartup"></value>
@@ -320,7 +320,7 @@
     <value type="bool" key="RunConfiguration.UseQmlDebugger">false</value>
     <value type="bool" key="RunConfiguration.UseQmlDebuggerAuto">true</value>
     <value type="QString" key="RunConfiguration.WorkingDirectory"></value>
-    <value type="QString" key="RunConfiguration.WorkingDirectory.default">C:/Users/marti/Documents/ramos/2020-2/ELO328/Qt/build-untitled4-Desktop_Qt_5_9_9_MSVC2015_64bit-Debug</value>
+    <value type="QString" key="RunConfiguration.WorkingDirectory.default">C:/Users/marti/Documents/ramos/2020-2/ELO328/Qt/build-Interface-Desktop_Qt_5_9_9_MSVC2015_64bit-Debug</value>
    </valuemap>
    <value type="int" key="ProjectExplorer.Target.RunConfigurationCount">1</value>
   </valuemap>
