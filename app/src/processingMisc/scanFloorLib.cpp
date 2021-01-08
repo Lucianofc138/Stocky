@@ -311,6 +311,7 @@ namespace stky
     MatchInfo match;
     RelevantPoints relevantPts;
 
+
     featureMatching(tempImg, boxImage, match);
     filterMatchesByDistance(match, boxImage.size(), 9);
     filterBestPoints(match, numGoodMatch);
@@ -338,7 +339,6 @@ namespace stky
     //     // cv::imshow("temp", tempImg );
     //     // cv::imshow("box", boxImage );
     //     // cv::waitKey(0);
-
     //     featureMatching(tempImg, boxImage, match);
     //     filterMatchesByDistance(match, boxImage.size(), 9);
     //     filterBestPoints(match, 6);
@@ -354,7 +354,6 @@ namespace stky
     //     bool cornersChecked = checkCorners(templateCorners, dstCorners);
     //     if (not(cornersChecked))
     //         return false;
-
     //     cv::Mat img_matches;
     //     drawMatches(tempImg, match.keypts_temp, boxImage, match.keypts_roi, match.good_matches,
     //                 img_matches, cv::Scalar::all(-1), cv::Scalar::all(-1), std::vector<char>(),

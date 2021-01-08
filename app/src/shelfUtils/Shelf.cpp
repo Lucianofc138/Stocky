@@ -88,6 +88,8 @@ void Shelf::loadProductsFromJson(std::string const jsonPath, int id){
 void Shelf::updateShelf(cv::Mat frame_, cv::Mat fg_){
     updateImage(frame_);
     setFgMask(fg_);
+    this->calcEmptyMask();
+    this->calcWrongProductsMask();
     if(this->isMoving()){
         fgDidMove  = true;
         this->last_movement_time = std::time(nullptr);
@@ -115,24 +117,6 @@ void Shelf::updateImage(cv::Mat frame)
     // cv::imshow("piso", this->floors.at(1).getFloorImage());
 
 }
-
-// void Shelf::updateFgMask(cv::Mat fg_)
-// {
-//     this->foregroundMask = fg_;
-
-//     int diameter = (fg_.cols + fg_.rows)/ (2 * 20); 
-//     cv::Size size(diameter, diameter);
-//     cv::Mat structEl = getStructuringElement(cv::MORPH_ELLIPSE, size);
-//     cv::erode(this->foregroundMask, this->foregroundMask, structEl, cv::Point(-1, -1));
-//     cv::dilate(this->foregroundMask, this->foregroundMask, structEl, cv::Point(-1, -1));
-
-//     if(~floors.empty()){
-//         for(int i=0; i < floors.size(); i++)
-//         {
-//             floors.at(i).setFgMask(this->foregroundMask);
-//         }
-//     }
-// }
 
 void Shelf::checkIfFgIntersectsFloors()
 {
