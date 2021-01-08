@@ -10,7 +10,10 @@ Shelf::Shelf(cv::Mat shelfImage_, int emptyThreshold,
     this->shelfImage = shelfImage_.clone();
     if (jsonPath.compare("")!=0 ) // path no nulo
     {
+        fgDidMove = false;
+        last_movement_time = -1;
         this->dataPath = jsonPath;
+
         this->emptyThreshold = emptyThreshold;
         loadProductsFromJson(jsonPath, id);
         if (chargeFromJson)
@@ -35,7 +38,7 @@ void Shelf::loadShelfFromJson(std::string const jsonPath, int id)
     // cv::FileStorage json = cv::FileStorage("app/data/data.json", cv::FileStorage::READ);
     cv::FileStorage json;
     try{
-        json.open("app/data/data.json", cv::FileStorage::READ);
+        json.open(jsonPath, cv::FileStorage::READ);
     }catch(cv::Exception ex)
     {
         return;
@@ -82,6 +85,24 @@ void Shelf::loadProductsFromJson(std::string const jsonPath, int id){
     }
 }
 
+void Shelf::updateShelf(cv::Mat frame_, cv::Mat fg_){
+    updateImage(frame_);
+    setFgMask(fg_);
+    if(this->isMoving()){
+        fgDidMove  = true;
+        this->last_movement_time = std::time(nullptr);
+    }
+
+    if(!this->isMoving() && this->fgDidMove){
+        fgDidMove  = false;
+        for(int i = 0; i<floors.size(); i++){
+            // std::cout << "Piso " << i << std::endl;
+            floors.at(i).reactToMovementEnd();
+        }
+    } 
+
+}
+
 void Shelf::updateImage(cv::Mat frame)
 {
     this->shelfImage = frame.clone();
@@ -95,23 +116,23 @@ void Shelf::updateImage(cv::Mat frame)
 
 }
 
-void Shelf::updateFgMask(cv::Mat fg_)
-{
-    this->foregroundMask = fg_;
+// void Shelf::updateFgMask(cv::Mat fg_)
+// {
+//     this->foregroundMask = fg_;
 
-    int diameter = (fg_.cols + fg_.rows)/ (2 * 20); 
-    cv::Size size(diameter, diameter);
-    cv::Mat structEl = getStructuringElement(cv::MORPH_ELLIPSE, size);
-    cv::erode(this->foregroundMask, this->foregroundMask, structEl, cv::Point(-1, -1));
-    cv::dilate(this->foregroundMask, this->foregroundMask, structEl, cv::Point(-1, -1));
+//     int diameter = (fg_.cols + fg_.rows)/ (2 * 20); 
+//     cv::Size size(diameter, diameter);
+//     cv::Mat structEl = getStructuringElement(cv::MORPH_ELLIPSE, size);
+//     cv::erode(this->foregroundMask, this->foregroundMask, structEl, cv::Point(-1, -1));
+//     cv::dilate(this->foregroundMask, this->foregroundMask, structEl, cv::Point(-1, -1));
 
-    if(~floors.empty()){
-        for(int i=0; i < floors.size(); i++)
-        {
-            floors.at(i).setFgMask(this->foregroundMask);
-        }
-    }
-}
+//     if(~floors.empty()){
+//         for(int i=0; i < floors.size(); i++)
+//         {
+//             floors.at(i).setFgMask(this->foregroundMask);
+//         }
+//     }
+// }
 
 void Shelf::checkIfFgIntersectsFloors()
 {
@@ -247,7 +268,6 @@ void Shelf::fillFloorsVect(int height, int width)
             }
         }
         // Rect entre medio
-
         cv::Rect temp_rect(0, this->centers.at(i) + thick / 2, width,
                            this->centers.at(i + 1) - this->centers.at(i) - thick);
         Floor temp_floor(shelfImage, temp_rect, this->foregroundMask, 
@@ -271,19 +291,33 @@ void Shelf::fillFloorsVect(int height, int width)
 
 void Shelf::calcEmptyMask() 
 {
-    cv::Mat emptyMask(this->shelfImage.rows, this->shelfImage.cols, 
-                      CV_8UC1, cv::Scalar(0, 0, 0));
-    this->emptyMask = emptyMask.clone(); // Se puede mejorar un poco aca
-
+    if( ~this->emptyMask.empty())
+        this->emptyMask = cv::Mat::zeros(this->shelfImage.size(), CV_8UC1);
     for (int i=0; i < (this->floors.size()); i++)
-    {
+    {   
         this->floors.at(i).calcEmptyMask(shelfImage, this->emptyThreshold);
         cv::Rect floorRect = this->floors.at(i).getFloorRect();
-        cv::Mat floorMask = this->floors.at(i).getEmptyMask();
-        floorMask.copyTo(this->emptyMask(floorRect));
+        this->floors.at(i).getEmptyMask().copyTo(this->emptyMask(floorRect));
+        
     }
-    cv::imshow("Máscara Espacios Vacío", this->emptyMask);
-    cv::waitKey(0);
+    // cv::imshow("Máscara Espacios Vacío", this->emptyMask);
+    
+    // cv::waitKey(0);
+}
+
+void Shelf::calcWrongProductsMask()
+{
+    this->wrongProductMask = cv::Mat(this->shelfImage.rows,
+                                     this->shelfImage.cols,
+                                     CV_8UC1, cv::Scalar(0, 0, 0));
+    for(int i=0; i< floors.size(); i++){
+        this->floors.at(i).calcWrongProductMask();
+        cv::Rect floorRect = floors.at(i).getFloorRect();
+        cv::Mat floorWrongMask = floors.at(i).getWrongProductsMask();
+        floorWrongMask.copyTo( this->wrongProductMask(floorRect));
+        // cv::imshow("floor wrong", floorWrongMask);
+        // cv::waitKey(0);
+    }
 }
 
 void Shelf::calcShelfMask(int height, int width)
@@ -375,3 +409,64 @@ Floor Shelf::getFloor(int floor)
     return this->floors.at(floor);
 }
 
+cv::Mat Shelf::getShelfImage(){
+    return this->shelfImage;
+}
+
+cv::Mat Shelf::getEmptyMask(){
+    // this->calcEmptyMask();
+    return this->emptyMask;
+}
+
+void Shelf::setFgMask(cv::Mat fgMask_){
+    this->foregroundMask = fgMask_;
+    for(int i = 0; i < floors.size(); i++){
+        floors.at(i).setFgMask(fgMask_);
+    }
+}
+
+cv::Mat Shelf::getFgMask(){
+    return this->foregroundMask;
+}
+
+cv::Mat Shelf::getWrongProductMask(){
+    return this->wrongProductMask;
+}
+
+bool Shelf::isMoving(){
+    cv::Mat M = this->foregroundMask;
+    int i, j, cols = M.cols,
+    rows = M.rows;
+    int depth = M.depth(),
+    channels = M.channels(),
+    step = M.step;
+    uchar *data = M.data;
+    int movePix = 0;
+    for(i = 0; i < rows; i++) {
+        for(j = 0; j < cols; j++) {
+             if (data[i*step + j*channels + 0] >=128)
+                movePix++;
+        }
+    }
+    if (movePix > cols*rows*0.05){
+        return true;
+    }
+    else
+        return false;
+}
+
+void Shelf::drawGuiImage(bool drawEmpty, bool drawWrong){
+    this->guiImage = this->shelfImage.clone();
+    if (drawEmpty)
+        stky::colorBlobsInImage(this->guiImage, 
+                                this->emptyMask, 
+                                cv::Scalar(255,0,0));
+    if (drawWrong)
+        stky::colorBlobsInImage(this->guiImage, 
+                                this->wrongProductMask, 
+                                cv::Scalar(0,0,255));
+}
+
+cv::Mat Shelf::getGuiImage(){
+    return this->guiImage;
+}

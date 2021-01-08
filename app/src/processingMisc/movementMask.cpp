@@ -45,11 +45,19 @@ namespace stky
 
     void RelevantFrames::getMovementMask()
     {
-    cv::bitwise_not(fg, fg);
-    cv::dilate(fg, fg, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(frame.cols / 70, frame.rows / 35)));
-    cv::erode(fg, fg, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(frame.cols / 14, frame.rows / 7)));
-    cv::dilate(fg, fg, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(frame.cols / 100, frame.rows / 50)));
-    cv::bitwise_not(fg, fg);
+    // cv::bitwise_not(fg, fg);
+    cv::medianBlur(fg, fg, 11);
+    cv::erode(fg, fg, cv::getStructuringElement(cv::MORPH_ELLIPSE, 
+                             cv::Size(frame.cols*0.05, frame.cols*0.05)));
+
+    cv::Mat flood = fg.clone();
+    cv::floodFill(flood, cv::Point2d(1, 1), cv::Scalar(255, 255, 255));
+    cv::bitwise_not(flood, flood);
+    cv::dilate(flood, flood, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5)));
+    cv::bitwise_or(fg, flood, fg);
+
+    cv::dilate(fg, fg, cv::getStructuringElement(
+        cv::MORPH_ELLIPSE, cv::Size(frame.cols*0.08, frame.rows*0.08)));
     }
 
 }

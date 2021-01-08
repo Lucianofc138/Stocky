@@ -21,6 +21,13 @@ class CrateModel
         // CrateModel(cv::Mat srcImg_, cv::Rect reg_, cv::Mat templateImg_);
         void loadCrate(cv::Mat srcImg_, cv::Rect reg_, cv::Mat templateImg_);
         void updateCrateImg(cv::Mat img_);
+        void checkIfImageMatch();
+
+        cv::Mat getCrateImage();
+        cv::Mat getTemplateImage();
+
+        void setCrateImage(cv::Mat crateImage_);
+        void setTemplateImage(cv::Mat templImage_);
 
     private:
         void calcHist();
@@ -37,9 +44,19 @@ class Crate
     
         Crate(cv::Mat srcImg_, cv::Rect reg_, cv::Mat prodTmplt);
 
+        void updateCrate(cv::Mat floorImg_);
         void updateCrateImg(cv::Mat floorImg_);
+        void checkModels();
 
         cv::Rect getRect();
+        
+        cv::Mat getCurrentImage();
+
+        bool isItEmpty();
+
+        bool isItRight();
+
+        void calcIfEmpty();
 
     private:
         cv::Rect regionInFloor;
@@ -66,17 +83,26 @@ class Floor
              std::vector< cv::FileNode > productsNodes_,
              std::vector< std::string > productsList_);
 
+        void updateFloor(cv::Mat shelfImage, cv::Mat shelfFgMask_);
+
         void updateImage(cv::Mat shelfImage);
 
-        void setFgMask(cv::Mat fg_);
+        void setFgMask(cv::Mat shelfFgMask_);
 
         void checkIfFgIntersectsCrates();
         
+        bool isMoving();
+
+        void reactToMovementEnd();
+
         cv::Rect getFloorRect();
 
         cv::Mat getFloorImage();
 
         cv::Mat getEmptyMask();
+
+        cv::Mat getFgMask();
+        cv::Mat getWrongProductsMask();
 
         void setProducts( std::vector< std::string > products_ );
 
@@ -84,14 +110,24 @@ class Floor
 
         void calcCrates();
 
+        void calcCrateMask();
+
+        void calcWrongProductMask();
+
+        Crate getCrate(int index);
+
         void yaBastaFreezer();
+        
 
     private:
         cv::Rect floorRect;
         cv::Mat floorImage;
         std::vector< Crate > crates;
+        cv::Mat crateMask;
         cv::Mat emptyMask;
         cv::Mat foregroundMask;
+        cv::Mat wrongProductsMask;
+        bool moveFlag;
         std::vector< cv::FileNode > productsNodes;
         std::vector< std::string > productsList;
         std::string dataPath;
@@ -111,10 +147,11 @@ class Shelf
 
         void saveJSON();
 
+        void updateShelf(cv::Mat frame_, cv::Mat fg_);
+
         void updateImage(cv::Mat frame);
 
-        void updateFgMask(cv::Mat fg_);
-
+        void setFgMask(cv::Mat fgMask_);
         // -----------------------------------------
 
         void checkIfFgIntersectsFloors();
@@ -127,12 +164,25 @@ class Shelf
 
         void calcEmptyMask();
 
+        void calcWrongProductsMask();
+
         void paintFloorRects(cv::Mat image);
 
         Floor getFloor(int floor);
 
-        // void test_initProdTemps()
+        cv::Mat getShelfImage();
 
+        cv::Mat getEmptyMask();
+
+        cv::Mat getFgMask();
+        
+        cv::Mat getWrongProductMask();
+        
+        bool isMoving();
+
+        void drawGuiImage(bool drawEmpty, bool drawWrong);
+
+        cv::Mat getGuiImage();
     private:
         int emptyThreshold;
 
@@ -148,8 +198,13 @@ class Shelf
         cv::Mat shelfMask;
         cv::Mat emptyMask;
         cv::Mat shelfImage;
+        cv::Mat wrongProductMask;
         cv::Mat foregroundMask;
+        cv::Mat guiImage;
         cv::Size imgSize;
+
+        std::time_t last_movement_time;
+        bool fgDidMove;
 
         void calcShelfMask(int height, int width);
 

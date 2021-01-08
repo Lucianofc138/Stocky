@@ -1,0 +1,24 @@
+{
+    "shelves":
+    [
+        {
+            "id": "1",
+            "products": ["ejemploLu"],
+            "thickness": "22",
+            "centers": ["185","493"],
+            "corners_cw": [
+                { "x": "0",   "y": "0"},
+                { "x": "732", "y": "0"},
+                { "x": "732", "y": "1024"},
+                { "x": "0",   "y": "1024"}
+            ]
+        }
+    ],
+    "products":[
+        {
+            "id": "1",
+            "name": "ejemploLu",
+            "path": "samples/templateImg/ejemploLu/"
+        }
+    ]
+}

@@ -6,8 +6,6 @@
 #define BOT_LEFT 3
 namespace stky
 {
-
-
     bool checkCorners(std::vector<cv::Point2f> src_corners,
                       std::vector<cv::Point2f> dst_corners)
     {
@@ -89,6 +87,7 @@ namespace stky
 
         cv::Ptr<cv::DescriptorMatcher> matcher = cv::DescriptorMatcher::create(cv::DescriptorMatcher::FLANNBASED);
         std::vector<std::vector<cv::DMatch>> knn_matches;
+        if(match.keypts_roi.size()>=20 && match.keypts_temp.size()>=20) 
         matcher->knnMatch(descriptors1, descriptors2, knn_matches, 2);
 
         const float ratio_thresh = 0.7f;
@@ -161,6 +160,19 @@ namespace stky
                 dst_pt.x += x_offset;
                 pts.dst_pts.push_back(dst_pt);
             }
+        }
+    }
+
+    void getRelevantPointsWithoutFilter(MatchInfo &match, RelevantPoints &pts, int x_offset)
+    {
+        for (int i = 0; i < match.good_matches.size(); i++)
+        {
+            int src_id = match.good_matches.at(i).queryIdx;
+            int dst_id = match.good_matches.at(i).trainIdx;
+            pts.src_pts.push_back(match.keypts_temp.at(src_id).pt);
+            cv::Point2f dst_pt = match.keypts_roi.at(dst_id).pt;
+            dst_pt.x += x_offset;
+            pts.dst_pts.push_back(dst_pt);
         }
     }
 
@@ -275,10 +287,11 @@ namespace stky
             // cv::imshow("Good Matches", img_matches);
             // cv::waitKey(0);
             cv::Rect box = getRectFromCorners(dstCorners, floorImg.size());
-            if (box.empty())
+            if (box.empty() || box.width < floorImg.cols/15 ) // 
                 continue;
-            imshow("box", floorImg(box));
-            boxes.push_back(box);
+            // imshow("box", floorImg(box));
+            //if (colores de template y box coinciden)
+                boxes.push_back(box);
             // cv::Mat img_matches;
             // drawMatches(templateImg, match.keypts_temp, roi_img, match.keypts_roi, match.good_matches,
             //             img_matches, cv::Scalar::all(-1), cv::Scalar::all(-1), std::vector<char>(),
@@ -292,5 +305,95 @@ namespace stky
             }
         }
     }
+
+    bool doTheyMatch(cv::Mat tempImg, cv::Mat boxImage, 
+                     int numGoodMatch, double distThreshold) {
+    MatchInfo match;
+    RelevantPoints relevantPts;
+
+    featureMatching(tempImg, boxImage, match);
+    filterMatchesByDistance(match, boxImage.size(), 9);
+    filterBestPoints(match, numGoodMatch);
+
+    int numPoint = match.good_matches.size();
+
+    if (numPoint < numGoodMatch)
+        return false;
+
+    double cumDistance = 0;
+    for (int i = 0; i < numPoint; ++i)
+    {
+        cumDistance += match.good_matches[i].distance;
+    }
+
+    if (cumDistance/numGoodMatch < distThreshold)
+        return true;
+    else
+        return false;
+    
+    }
+    // bool doTheyMatch(cv::Mat tempImg, cv::Mat boxImage){
+    //     MatchInfo match;
+    //     RelevantPoints relevantPts;
+    //     // cv::imshow("temp", tempImg );
+    //     // cv::imshow("box", boxImage );
+    //     // cv::waitKey(0);
+
+    //     featureMatching(tempImg, boxImage, match);
+    //     filterMatchesByDistance(match, boxImage.size(), 9);
+    //     filterBestPoints(match, 6);
+    //     getRelevantPointsWithoutFilter(match, relevantPts, 0);
+    //     int minKeypointsAmount = 6;
+    //     if (relevantPts.src_pts.size() < minKeypointsAmount)
+    //         return false;
+    //     cv::Mat perspectiveMat_ = cv::findHomography(relevantPts.src_pts, relevantPts.dst_pts);
+    //     std::vector<cv::Point2f> templateCorners, dstCorners, boxCorners;
+    //     getCornerPointsCW(tempImg, templateCorners);
+    //     getCornerPointsCW(boxImage, boxCorners);
+    //     perspectiveTransform(templateCorners, dstCorners, perspectiveMat_);
+    //     bool cornersChecked = checkCorners(templateCorners, dstCorners);
+    //     if (not(cornersChecked))
+    //         return false;
+
+    //     cv::Mat img_matches;
+    //     drawMatches(tempImg, match.keypts_temp, boxImage, match.keypts_roi, match.good_matches,
+    //                 img_matches, cv::Scalar::all(-1), cv::Scalar::all(-1), std::vector<char>(),
+    //                 cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
+    //     // cv::imshow("Good Matches", img_matches);
+    //     // cv::waitKey(0);
+    //     for(int i=0; i<dstCorners.size(); i++){ //saturate points
+    //         cv::Point currPt = dstCorners.at(i);
+    //         if (currPt.x < 0)
+    //             currPt.x = 0;
+    //         if (currPt.y < 0)
+    //             currPt.y = 0;
+    //         if (currPt.x > boxImage.cols)
+    //             currPt.x = boxImage.cols-1;
+    //         if (currPt.y > boxImage.rows)
+    //             currPt.y = boxImage.rows;
+    //         dstCorners.at(i) = currPt;
+    //     }
+    //     int maxAllowedDistance = 0.5*(boxImage.rows + boxImage.cols)/2;
+    //     bool corners_checked[4] = {0, 0, 0, 0};
+    //     for (int i=0; i<dstCorners.size(); i++){
+    //         double min_d = 10000000000;
+    //         int min_index = 0;
+    //         for(int j=0; j<boxCorners.size(); j++){
+    //             int x1 = boxCorners.at(j).x;
+    //             int y1 = boxCorners.at(j).y;
+    //             int x2 = dstCorners.at(i).x;
+    //             int y2 = dstCorners.at(i).y;
+    //             double dist = sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1));
+    //             if (dist < min_d && corners_checked[j] == false){
+    //                 min_d = dist;
+    //                 min_index = j;
+    //             }
+    //         }
+    //         if (min_d > maxAllowedDistance)
+    //             return false;
+    //         corners_checked[min_index] = true;
+    //     }
+    //     return true;
+    // }
 
 } // namespace stky

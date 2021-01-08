@@ -33,10 +33,11 @@ namespace stky
 
     void scanFeaturesSlidingWindow(cv::Mat templateImg, cv::Mat floorImg, std::vector<cv::Rect> &boxes);
 
+    bool doTheyMatch(cv::Mat tempImg, cv::Mat boxImage, 
+                     int numGoodMatch, double distThreshold);
     // ------------------------ DRAW RESOURCES -------------------------------
 
     void colorBlobsInImage(cv::Mat& image, cv::Mat& blobsMask, cv::Scalar color );
-
 
     // ------------------------ MOVEMENT MASK -----------------------------------
 
