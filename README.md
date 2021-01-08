@@ -12,12 +12,12 @@ En este proyecto estamos desarrollando una herramienta para supermercados o esta
 
 ## Para usar...
 
-0) Se necesita tener instalado OpenCV:
+0)  Se necesita tener instalado OpenCV:
     - Se deben incluir librerias de colaboradores no libres (xfeatures2d)
-1) Clonar el repositorio o descargar directamente
-2) Compilar con:
+1)  Clonar el repositorio o descargar directamente
+2)  Compilar con:
 ``` cmake -D WITH_CUDA=OFF -S . -B build && cmake --build build ```
-3) Correr incluyendo ruta del video y json a utilizar (los trae por defecto si no se rellena)
+3)  Correr incluyendo ruta del video y json a utilizar (los trae por defecto si no se rellena)
 
 ## Funcionamiento actual
 
