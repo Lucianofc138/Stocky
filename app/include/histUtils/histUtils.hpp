@@ -17,22 +17,69 @@ struct HistRange {
 
 class Hist {
     public:
+
+    /**
+    * Constructor de Hist
+    */
     Hist();
 
+    /**
+     * Constructor de Hist
+     * @param src_ imagen para calcular histograma
+     * @param n_bins_ numero de bins por defecto 16
+     * @param mask_ matriz con la mascara vacia por defecto
+     * @return range_ rango del histograma por defecto
+     */
     Hist(const cv::Mat& src_, int n_bins_ = 16, 
         const cv::Mat& mask_ = cv::Mat(), HistRange range_ = {0, 255});
 
+    /**
+     * Constructor de Hist
+     * @param src_ imagen para calcular histograma
+     * @param n_bins_ numero de bins
+     * @param mask_ matriz con la mascara
+     * @return range_ rango del histograma
+     */
     Hist(const cv::Mat& src_, std::vector<int>& n_bins_,
         std::vector<HistRange>& ranges_, const cv::Mat& mask_ = cv::Mat());
 
+    /**
+     * Carga variables al histograma
+     * @param src_ imagen para calcular histograma
+     * @param n_bins_ numero de bins
+     * @param mask_ matriz con la mascara
+     * @return range_ rango del histograma
+     */
     void loadSrc(const cv::Mat& src_, std::vector<int> &n_bins_,
         std::vector<HistRange> &ranges_, const cv::Mat& mask_ = cv::Mat());
 
+    /**
+     * @ return matriz con el histograma 
+     */
     cv::Mat getHist();
+
+    /**
+     * @return Matriz normalizada del histograma
+     */
     cv::Mat getNormalizedHist();
+
+    /**
+     * Calcula la distancia de BHATTACHARYYA
+     * @param other histograma a comparar
+     * @return un numero decimal con la comparacion entre histogramas
+     */
     double calcDistance(Hist& other);
+
+    /**
+     * @return vector de promedio para el histograma
+     */
     std::vector<double> getMean();
+
+    /**
+     * @return vector de desviacion estandar para histograma
+     */
     std::vector<double> getStdDev();
+
 
     private:
     cv::Mat src;
