@@ -32,12 +32,13 @@ int main( int argc, char** argv )
     for (int i=0; i< 901; i++){ 
         capture >> frame;
     }
-
+    
     std::vector < cv::Point2f > srcPoints = initHomographyPts();
     cv::Size dstSize(cv::Size(420,700));
     cv::Mat dstPerspective = getHomography(frame, srcPoints, dstSize);
     cv::Mat dstImg = getShelfFrontView(frame, dstPerspective, dstSize);
-
+    // cv::imshow("First Frame", dstImg);
+    // cv::waitKey(0);
     Shelf shelf1(dstImg, 168, jsonPath, true, 1);
 
     stky::RelevantFrames relevantFrames;
