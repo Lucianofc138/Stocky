@@ -264,7 +264,7 @@ namespace stky
             RelevantPoints relevantPts;
             // cv::imshow("temp", templateImg);
             // cv::imshow("roi", roi_img);
-            // cv::waitKey(0);
+            // cv::waitKey(10);
             featureMatching(templateImg, roi_img, match);
             filterMatchesByDistance(match, roi_img.size(), 9);
             filterBestPoints(match, 6);
@@ -284,20 +284,17 @@ namespace stky
             drawMatches(templateImg, match.keypts_temp, roi_img, match.keypts_roi, match.good_matches,
                         img_matches, cv::Scalar::all(-1), cv::Scalar::all(-1), std::vector<char>(),
                         cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
-            // cv::imshow("Good Matches", img_matches);
-            // cv::waitKey(0);
+
             cv::Rect box = getRectFromCorners(dstCorners, floorImg.size());
             if (box.empty() || box.width < floorImg.cols/15 ) // 
                 continue;
+                
             // imshow("box", floorImg(box));
+            // cv::imshow("Good Matches", img_matches);
+            // cv::waitKey(10);
             //if (colores de template y box coinciden)
                 boxes.push_back(box);
-            // cv::Mat img_matches;
-            // drawMatches(templateImg, match.keypts_temp, roi_img, match.keypts_roi, match.good_matches,
-            //             img_matches, cv::Scalar::all(-1), cv::Scalar::all(-1), std::vector<char>(),
-            //             cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
-            cv::imshow("Good Matches", img_matches);
-            cv::waitKey(20);
+
 
             if (cornersChecked)
             {
